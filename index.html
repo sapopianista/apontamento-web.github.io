@@ -83,9 +83,15 @@
                             <label for="login-email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
                             <input type="email" id="login-email" class="w-full p-2 border border-slate-300 rounded-lg" required autocomplete="email">
                         </div>
-                        <div class="mb-6">
+                        <div class="mb-4">
                             <label for="login-password" class="block text-sm font-medium text-slate-700 mb-1">Senha</label>
                             <input type="password" id="login-password" class="w-full p-2 border border-slate-300 rounded-lg" required autocomplete="current-password">
+                        </div>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center">
+                                <input id="remember-me" name="remember-me" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded">
+                                <label for="remember-me" class="ml-2 block text-sm text-slate-700">Manter conectado</label>
+                            </div>
                         </div>
                         <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Entrar</button>
                         <p id="login-error" class="text-red-500 text-sm mt-2 text-center h-4"></p>
@@ -397,7 +403,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, signInAnonymously, setPersistence, browserSessionPersistence, indexedDBLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, collection, setDoc, deleteDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- CONFIGURAÇÃO DO FIREBASE ---
@@ -467,6 +473,7 @@
             employees: [],
             companies: [],
             timesheets: {},
+            localTimesheet: {},
             currentEmployeeId: null,
             apontamentoCompanyId: null,
             reportCompanyFilter: '',
@@ -522,8 +529,8 @@
             const { workload = '08:00', paymentType = 'monthly' } = employee || {};
             const { status = 'workday', is_holiday = false, daily_workload = workload } = dayData;
             const workloadMinutes = timeToMinutes(daily_workload);
-            if (status === 'absent') return { totalWorkedMinutes: 0, balanceMinutes: -workloadMinutes, overtime50Minutes: 0, overtime100Minutes: 0, nightlyMinutes: 0 };
-            if (['day_off', 'certificate'].includes(status)) return { totalWorkedMinutes: 0, balanceMinutes: 0, overtime50Minutes: 0, overtime100Minutes: 0, nightlyMinutes: 0 };
+            if (status === 'absent') return { totalWorkedMinutes: 0, balanceMinutes: -workloadMinutes, overtime50Minutes: 0, overtime100Minutes: 0, nightlyMinutes: 0, nightlyMinutesRaw: 0 };
+            if (['day_off', 'certificate'].includes(status)) return { totalWorkedMinutes: 0, balanceMinutes: 0, overtime50Minutes: 0, overtime100Minutes: 0, nightlyMinutes: 0, nightlyMinutesRaw: 0 };
             const entry1 = timeToMinutes(dayData.entry1), exit1 = timeToMinutes(dayData.exit1), entry2 = timeToMinutes(dayData.entry2), exit2 = timeToMinutes(dayData.exit2);
             let period1 = (exit1 > 0 && entry1 > 0) ? (exit1 >= entry1 ? exit1 - entry1 : (1440 - entry1) + exit1) : 0;
             let period2 = (exit2 > 0 && entry2 > 0) ? (exit2 >= entry2 ? exit2 - entry2 : (1440 - entry2) + exit2) : 0;
@@ -531,10 +538,10 @@
             let nightlyMinutesRaw = calculateNightlyOverlap(entry1, exit1) + calculateNightlyOverlap(entry2, exit2);
             const nightlyMinutesForPayment = nightlyMinutesRaw * (60 / 52.5);
             if (paymentType === 'hourly') {
-                return { totalWorkedMinutes, balanceMinutes: 0, overtime50Minutes: 0, overtime100Minutes: is_holiday ? totalWorkedMinutes : 0, nightlyMinutes: nightlyMinutesForPayment };
+                return { totalWorkedMinutes, balanceMinutes: 0, overtime50Minutes: 0, overtime100Minutes: is_holiday ? totalWorkedMinutes : 0, nightlyMinutes: nightlyMinutesForPayment, nightlyMinutesRaw };
             }
             const balanceMinutes = totalWorkedMinutes - workloadMinutes;
-            return { totalWorkedMinutes, balanceMinutes, overtime50Minutes: is_holiday ? 0 : Math.max(0, balanceMinutes), overtime100Minutes: is_holiday ? totalWorkedMinutes : 0, nightlyMinutes: nightlyMinutesForPayment };
+            return { totalWorkedMinutes, balanceMinutes, overtime50Minutes: is_holiday ? 0 : Math.max(0, balanceMinutes), overtime100Minutes: is_holiday ? totalWorkedMinutes : 0, nightlyMinutes: nightlyMinutesForPayment, nightlyMinutesRaw };
         };
         
         // --- FUNÇÕES DE RENDERIZAÇÃO E UI ---
@@ -565,19 +572,20 @@
         };
 
         const renderTimesheet = () => {
-            state.hasUnsavedChanges = false;
-            updateSaveStatus();
             const currentEmployee = state.employees.find(e => e.id === state.currentEmployeeId);
             if (!currentEmployee) { timesheetBody.innerHTML = `<tr><td colspan="13" class="p-4 text-center text-slate-500">Selecione uma empresa e um funcionário para ver os apontamentos.</td></tr>`; return; }
+            const timesheetId = `${state.currentEmployeeId}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
+            state.localTimesheet = JSON.parse(JSON.stringify(state.timesheets[timesheetId] || {}));
+            state.hasUnsavedChanges = false;
+            updateSaveStatus();
+            
             const daysInMonth = new Date(state.currentYear, state.currentMonth + 1, 0).getDate();
             const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-            const timesheetId = `${state.currentEmployeeId}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
-            const timesheetData = { ...(state.timesheets[timesheetId] || {}) };
             timesheetBody.innerHTML = days.map(day => {
                 const dayStr = day.toString().padStart(2, '0');
                 const date = new Date(state.currentYear, state.currentMonth, day);
                 const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'short' }).slice(0, 3);
-                const dayData = timesheetData[dayStr] || {};
+                const dayData = state.localTimesheet[dayStr] || {};
                 const { totalWorkedMinutes, balanceMinutes, overtime50Minutes, overtime100Minutes, nightlyMinutes } = calculateDayTotals(dayData, currentEmployee);
                 const status = dayData.status || 'workday';
                 const isWorkday = !['absent', 'day_off', 'certificate'].includes(status);
@@ -605,7 +613,7 @@
         const calculateMonthTotals = (employee) => {
             const timesheetId = `${employee.id}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
             const timesheetData = state.timesheets[timesheetId] || {};
-            const totals = { totalWorked: 0, balance: 0, extra50: 0, extra100: 0, nightly: 0 };
+            const totals = { totalWorked: 0, balance: 0, extra50: 0, extra100: 0, nightly: 0, nightlyRaw: 0 };
             Object.values(timesheetData).forEach(dayData => {
                 const dayTotals = calculateDayTotals(dayData, employee);
                 totals.totalWorked += dayTotals.totalWorkedMinutes;
@@ -613,6 +621,7 @@
                 totals.extra50 += dayData.manual_extra50 ? timeToMinutes(dayData.extra50) : dayTotals.overtime50Minutes;
                 totals.extra100 += dayData.manual_extra100 ? timeToMinutes(dayData.extra100) : dayTotals.overtime100Minutes;
                 totals.nightly += dayData.manual_nightly ? timeToMinutes(dayData.nightly) : dayTotals.nightlyMinutes;
+                totals.nightlyRaw += dayTotals.nightlyMinutesRaw;
             });
             return totals;
         };
@@ -627,7 +636,7 @@
                 if (emp.paymentType === 'hourly') {
                     const basePay = ((monthTotals.totalWorked - monthTotals.extra100) / 60) * hourlyRate;
                     const holidayPay = (monthTotals.extra100 / 60) * hourlyRate * 2;
-                    const nightlyBonusValue = (monthTotals.nightly / 60) * hourlyRate * nightlyPercentage;
+                    const nightlyBonusValue = (monthTotals.nightlyRaw / 60) * hourlyRate * nightlyPercentage;
                     totalVariablesDisplay = `Total: ${formatCurrency(basePay + holidayPay + nightlyBonusValue)}`;
                     extra50Display = minutesToTime(0);
                     extra100Display = formatCurrency(holidayPay);
@@ -635,7 +644,7 @@
                 } else {
                     const extra50Value = (monthTotals.extra50 / 60) * hourlyRate * 1.5;
                     const extra100Value = (monthTotals.extra100 / 60) * hourlyRate * 2.0;
-                    const nightlyValue = (monthTotals.nightly / 60) * hourlyRate * nightlyPercentage;
+                    const nightlyValue = (monthTotals.nightlyRaw / 60) * hourlyRate * nightlyPercentage;
                     totalVariablesDisplay = formatCurrency(extra50Value + extra100Value + nightlyValue);
                     extra50Display = hourlyRate > 0 ? formatCurrency(extra50Value) : minutesToTime(monthTotals.extra50);
                     extra100Display = hourlyRate > 0 ? formatCurrency(extra100Value) : minutesToTime(monthTotals.extra100);
@@ -721,7 +730,26 @@
         };
 
         // --- EVENT HANDLERS & MODAL LOGIC ---
-        const switchToTab = (tabId) => {document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');document.getElementById(`${tabId}-tab`).classList.remove('hidden');if (tabId === 'relatorio') renderReport();if (tabId === 'apontamentos') renderTimesheet();if (tabId === 'empresas') renderCompanyList();};
+        const addClickOutsideToClose = (modalElement, closeFunction) => {
+            modalElement.addEventListener('mousedown', (e) => {
+                if (e.target === modalElement) {
+                    modalElement.addEventListener('mouseup', (upEvent) => {
+                        if (upEvent.target === modalElement) {
+                            closeFunction();
+                        }
+                    }, { once: true });
+                }
+            });
+        };
+
+        const switchToTab = (tabId) => {
+            if(state.hasUnsavedChanges) {
+                if(!confirm("Você tem alterações não salvas que serão perdidas. Deseja continuar?")) {
+                    return;
+                }
+            }
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');document.getElementById(`${tabId}-tab`).classList.remove('hidden');if (tabId === 'relatorio') renderReport();if (tabId === 'apontamentos') renderTimesheet();if (tabId === 'empresas') renderCompanyList();
+        };
         
         const openEmployeeModal = (employee = null) => {
             employeeForm.reset();
@@ -753,7 +781,18 @@
         const handleEmployeeFormSubmit = async (e) => { e.preventDefault(); const id = document.getElementById('employee-id').value; const name = document.getElementById('employee-name').value; const salary = document.getElementById('employee-salary').value || "0"; const companyInput = employeeCompanyContainer.querySelector('input'); const companyId = companyInput.dataset.selectedId || ""; const workload = document.getElementById('employee-workload').value; const paymentType = document.getElementById('employee-payment-type').value; await saveEmployee(id, name, salary, companyId, workload, paymentType); closeEmployeeModal(); };
         const handleCompanyFormSubmit = async (e) => { e.preventDefault(); const id = document.getElementById('company-id').value; const codigo = document.getElementById('company-code').value; const nome = document.getElementById('company-name').value; const cnpj = document.getElementById('company-cnpj').value; await saveCompany(id, codigo, nome, cnpj); closeCompanyModal(); if (employeeModalState) { employeeModalState.newCompanyId = id; setTimeout(() => openEmployeeModal(), 150); } };
         const handleConfirmDelete = () => {if (itemToDelete.type === 'employee') deleteEmployeeAndTimesheets(itemToDelete.id);else if (itemToDelete.type === 'company') deleteCompanyAndUpdateEmployees(itemToDelete.id);};
-        const handleDateChange = () => {state.currentMonth = parseInt(monthSelect.value);state.currentYear = parseInt(yearSelect.value);renderTimesheet();renderReport();};
+        const handleDateChange = (e) => {
+            if(state.hasUnsavedChanges) {
+                if(!confirm("Você tem alterações não salvas que serão perdidas. Deseja continuar?")) {
+                    e.target.value = e.target.id === 'month-select' ? state.currentMonth : state.currentYear;
+                    return;
+                }
+            }
+            state.currentMonth = parseInt(monthSelect.value);
+            state.currentYear = parseInt(yearSelect.value);
+            renderTimesheet();
+            renderReport();
+        };
         
         const handlePdfExport = () => {
             if (!state.currentEmployeeId) { alert("Por favor, selecione um funcionário para exportar."); return; }
@@ -793,7 +832,7 @@
             const hourlyRate = (employee.paymentType === 'hourly') ? parseFloat(employee.salary || 0) : (parseFloat(employee.salary || 0) / 220);
             const extra50Value = (monthTotals.extra50 / 60) * hourlyRate * 1.5;
             const extra100Value = (monthTotals.extra100 / 60) * hourlyRate * 2.0;
-            const nightlyValue = (monthTotals.nightly / 60) * (hourlyRate * (parseFloat(document.getElementById('nightly-percentage').value) / 100));
+            const nightlyValue = (monthTotals.nightlyRaw / 60) * hourlyRate * (parseFloat(document.getElementById('nightly-percentage').value) / 100);
 
             const summaryHtml = `
                 <div class="summary-section">
@@ -905,8 +944,17 @@
             document.body.removeChild(link);
         };
 
-        const handleSaveTimesheet = async () => { if (!state.hasUnsavedChanges || !state.currentEmployeeId) return; updateSaveStatus(true); const timesheetId = `${state.currentEmployeeId}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`; const currentMonthTimesheet = state.timesheets[timesheetId] || {}; await saveTimesheetData(state.currentEmployeeId, state.currentMonth, state.currentYear, currentMonthTimesheet); state.hasUnsavedChanges = false; updateSaveStatus(false, true); };
-        const handleTimesheetInputChange = (e) => { const { day, field } = e.target.dataset; const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value; const currentEmployee = state.employees.find(emp => emp.id === state.currentEmployeeId); if (!currentEmployee) return; const timesheetId = `${state.currentEmployeeId}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`; if (!state.timesheets[timesheetId]) state.timesheets[timesheetId] = {}; const currentMonthTimesheet = state.timesheets[timesheetId]; if (!currentMonthTimesheet[day]) currentMonthTimesheet[day] = {}; const dayData = currentMonthTimesheet[day]; dayData[field] = value; const row = e.target.closest('tr'); const status = row.querySelector('.status-select').value; const isWorkday = !['absent', 'day_off', 'certificate'].includes(status); row.querySelectorAll('.time-input, .manual-input, .workload-input').forEach(input => input.disabled = !isWorkday); row.classList.toggle('bg-slate-100', !isWorkday); row.classList.toggle('text-slate-500', !isWorkday); if (!isWorkday) { row.querySelectorAll('.time-input').forEach(i => i.value = ''); Object.assign(dayData, { entry1: '', exit1: '', entry2: '', exit2: '' }); } const { totalWorkedMinutes, balanceMinutes, overtime50Minutes, overtime100Minutes, nightlyMinutes } = calculateDayTotals(dayData, currentEmployee); if (e.target.classList.contains('manual-input')) { dayData[`manual_${field}`] = true; } else if (['time-input', 'workload-input', 'status-select'].some(c => e.target.classList.contains(c)) || field === 'is_holiday') { delete dayData.manual_extra50; delete dayData.manual_extra100; delete dayData.manual_nightly; } dayData.extra50 = dayData.manual_extra50 ? dayData.extra50 : minutesToTime(overtime50Minutes); dayData.extra100 = dayData.manual_extra100 ? dayData.extra100 : minutesToTime(overtime100Minutes); dayData.nightly = dayData.manual_nightly ? dayData.nightly : minutesToTime(nightlyMinutes); row.querySelector('[data-field="extra50"]').value = dayData.extra50; row.querySelector('[data-field="extra100"]').value = dayData.extra100; row.querySelector('[data-field="nightly"]').value = dayData.nightly; row.querySelector('td:nth-child(9)').textContent = minutesToTime(totalWorkedMinutes); const balanceCell = row.querySelector('td:nth-child(10)'); balanceCell.textContent = currentEmployee.paymentType === 'hourly' ? 'N/A' : minutesToTime(balanceMinutes, true); balanceCell.className = `p-2 text-center font-semibold ${balanceMinutes < 0 ? 'text-red-500' : 'text-green-600'}`; if (!state.hasUnsavedChanges) { state.hasUnsavedChanges = true; updateSaveStatus(); } };
+        const handleSaveTimesheet = async () => { 
+            if (!state.hasUnsavedChanges || !state.currentEmployeeId) return; 
+            updateSaveStatus(true); 
+            const timesheetId = `${state.currentEmployeeId}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
+            state.timesheets[timesheetId] = JSON.parse(JSON.stringify(state.localTimesheet));
+            await saveTimesheetData(state.currentEmployeeId, state.currentMonth, state.currentYear, state.timesheets[timesheetId]); 
+            state.hasUnsavedChanges = false; 
+            updateSaveStatus(false, true); 
+        };
+
+        const handleTimesheetInputChange = (e) => { const { day, field } = e.target.dataset; const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value; const currentEmployee = state.employees.find(emp => emp.id === state.currentEmployeeId); if (!currentEmployee) return; if (!state.localTimesheet[day]) state.localTimesheet[day] = {}; const dayData = state.localTimesheet[day]; dayData[field] = value; const row = e.target.closest('tr'); const status = row.querySelector('.status-select').value; const isWorkday = !['absent', 'day_off', 'certificate'].includes(status); row.querySelectorAll('.time-input, .manual-input, .workload-input').forEach(input => input.disabled = !isWorkday); row.classList.toggle('bg-slate-100', !isWorkday); row.classList.toggle('text-slate-500', !isWorkday); if (!isWorkday) { row.querySelectorAll('.time-input').forEach(i => i.value = ''); Object.assign(dayData, { entry1: '', exit1: '', entry2: '', exit2: '' }); } const { totalWorkedMinutes, balanceMinutes, overtime50Minutes, overtime100Minutes, nightlyMinutes } = calculateDayTotals(dayData, currentEmployee); if (e.target.classList.contains('manual-input')) { dayData[`manual_${field}`] = true; } else if (['time-input', 'workload-input', 'status-select'].some(c => e.target.classList.contains(c)) || field === 'is_holiday') { delete dayData.manual_extra50; delete dayData.manual_extra100; delete dayData.manual_nightly; } dayData.extra50 = dayData.manual_extra50 ? dayData.extra50 : minutesToTime(overtime50Minutes); dayData.extra100 = dayData.manual_extra100 ? dayData.extra100 : minutesToTime(overtime100Minutes); dayData.nightly = dayData.manual_nightly ? dayData.nightly : minutesToTime(nightlyMinutes); row.querySelector('[data-field="extra50"]').value = dayData.extra50; row.querySelector('[data-field="extra100"]').value = dayData.extra100; row.querySelector('[data-field="nightly"]').value = dayData.nightly; row.querySelector('td:nth-child(9)').textContent = minutesToTime(totalWorkedMinutes); const balanceCell = row.querySelector('td:nth-child(10)'); balanceCell.textContent = currentEmployee.paymentType === 'hourly' ? 'N/A' : minutesToTime(balanceMinutes, true); balanceCell.className = `p-2 text-center font-semibold ${balanceMinutes < 0 ? 'text-red-500' : 'text-green-600'}`; if (!state.hasUnsavedChanges) { state.hasUnsavedChanges = true; updateSaveStatus(); } };
         const handleTimesheetNavigation = (e) => { const target = e.target; if (!target.matches('.time-input, .workload-input, .manual-input, .status-select, [data-field="is_holiday"]')) return; const key = e.key; if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) return; e.preventDefault(); const currentTr = target.closest('tr'); const currentTd = target.closest('td'); if (!currentTr || !currentTd) return; const allRows = Array.from(timesheetBody.rows); const rowIndex = allRows.indexOf(currentTr); const cellIndex = Array.from(currentTr.cells).indexOf(currentTd); let nextFocusable = null; if (key === 'ArrowUp' && rowIndex > 0) { nextFocusable = allRows[rowIndex - 1].cells[cellIndex]?.querySelector('input:not([disabled]), select:not([disabled])'); } else if (key === 'ArrowDown' && rowIndex < allRows.length - 1) { nextFocusable = allRows[rowIndex + 1].cells[cellIndex]?.querySelector('input:not([disabled]), select:not([disabled])'); } else if (key === 'ArrowLeft') { let prevTd = currentTd.previousElementSibling; while (prevTd && !nextFocusable) { nextFocusable = prevTd.querySelector('input:not([disabled]), select:not([disabled])'); prevTd = prevTd.previousElementSibling; } } else if (key === 'ArrowRight') { let nextTd = currentTd.nextElementSibling; while (nextTd && !nextFocusable) { nextFocusable = nextTd.querySelector('input:not([disabled]), select:not([disabled])'); nextTd = nextTd.nextElementSibling; } } if (nextFocusable) { nextFocusable.focus(); if (typeof nextFocusable.select === 'function') nextFocusable.select(); } };
 
         // --- INICIALIZAÇÃO ---
@@ -938,13 +986,17 @@
                     setupListeners();
 
                 } else {
-                    signInAnonymously(auth).catch(err => console.error("Anonymous sign-in failed:", err));
+                    signInAnonymously(auth).catch(err => {
+                        console.error("Anonymous sign-in failed after state change:", err);
+                        mainContentEl.innerHTML = `<p class="text-center text-red-500">Erro de autenticação. Verifique as configurações do Firebase.</p>`;
+                        mainContentEl.classList.remove('hidden');
+                    });
                 }
             });
         };
         
         const clearUI = () => {
-             state = { employees: [], companies: [], timesheets: {}, currentEmployeeId: null, apontamentoCompanyId: null, reportCompanyFilter: '', currentMonth: new Date().getMonth(), currentYear: new Date().getFullYear(), searchTerm: '', companyFilter: '', hasUnsavedChanges: false };
+             state = { employees: [], companies: [], timesheets: {}, localTimesheet: {}, currentEmployeeId: null, apontamentoCompanyId: null, reportCompanyFilter: '', currentMonth: new Date().getMonth(), currentYear: new Date().getFullYear(), searchTerm: '', companyFilter: '', hasUnsavedChanges: false };
              employeeList.innerHTML = '';
              companyListBody.innerHTML = '';
              timesheetBody.innerHTML = '';
@@ -954,8 +1006,19 @@
 
         const initializeAppComponents = () => {
             appComponentsInitialized = true;
-            apontamentoCompanyInput = createCompanySearchableDropdown(apontamentoCompanyContainer, "Pesquisar empresa...", false, (selection) => { if (selection.action === 'select') { state.apontamentoCompanyId = selection.id; state.currentEmployeeId = null; if(apontamentoEmployeeInput) { apontamentoEmployeeInput.value = ''; apontamentoEmployeeInput.dataset.selectedId = ''; apontamentoEmployeeInput.disabled = !selection.id; apontamentoEmployeeInput.placeholder = selection.id ? "Pesquisar funcionário..." : "Selecione uma empresa"; } renderTimesheet(); const company = state.companies.find(c=>c.id === selection.id); if(company) {apontamentoCompanyInput.value = company.nome;} else {apontamentoCompanyInput.value = "Todas as Empresas"} } });
-            apontamentoEmployeeInput = createEmployeeSearchableDropdown(apontamentoEmployeeContainer, "Selecione uma empresa", () => state.apontamentoCompanyId ? state.employees.filter(e => e.companyId === state.apontamentoCompanyId) : [], (selection) => { if (selection.action === 'select') { state.currentEmployeeId = selection.id; renderTimesheet(); const employee = state.employees.find(emp=>emp.id === selection.id); if(employee){apontamentoEmployeeInput.value = employee.name; apontamentoEmployeeInput.dataset.selectedId = employee.id;} } });
+            
+            const handleNavigationWithUnsavedChanges = (callback) => {
+                if (state.hasUnsavedChanges) {
+                    if (!confirm("Você tem alterações não salvas que serão perdidas. Deseja continuar?")) {
+                        return false;
+                    }
+                }
+                callback();
+                return true;
+            };
+
+            apontamentoCompanyInput = createCompanySearchableDropdown(apontamentoCompanyContainer, "Pesquisar empresa...", false, (selection) => { handleNavigationWithUnsavedChanges(() => { if (selection.action === 'select') { state.apontamentoCompanyId = selection.id; state.currentEmployeeId = null; if(apontamentoEmployeeInput) { apontamentoEmployeeInput.value = ''; apontamentoEmployeeInput.dataset.selectedId = ''; apontamentoEmployeeInput.disabled = !selection.id; apontamentoEmployeeInput.placeholder = selection.id ? "Pesquisar funcionário..." : "Selecione uma empresa"; } renderTimesheet(); const company = state.companies.find(c=>c.id === selection.id); if(company) {apontamentoCompanyInput.value = company.nome;} else {apontamentoCompanyInput.value = "Todas as Empresas"} } })});
+            apontamentoEmployeeInput = createEmployeeSearchableDropdown(apontamentoEmployeeContainer, "Selecione uma empresa", () => state.apontamentoCompanyId ? state.employees.filter(e => e.companyId === state.apontamentoCompanyId) : [], (selection) => { handleNavigationWithUnsavedChanges(() => { if (selection.id) { state.currentEmployeeId = selection.id; renderTimesheet(); const employee = state.employees.find(emp=>emp.id === selection.id); if(employee){apontamentoEmployeeInput.value = employee.name; apontamentoEmployeeInput.dataset.selectedId = employee.id;} } })});
             apontamentoEmployeeInput.disabled = true;
 
             createCompanySearchableDropdown(filterCompanyContainer, "Filtrar por empresa...", false, (selection) => { if (selection.action === 'select') { state.companyFilter = selection.id; renderEmployeeList(); const input = filterCompanyContainer.querySelector('input'); const company = state.companies.find(c => c.id === selection.id); input.value = company ? company.nome : 'Todas as Empresas'; } });
@@ -963,17 +1026,20 @@
 
             populateDateSelectors();
 
-            document.querySelector('[aria-label="Tabs"]').addEventListener('click', (e) => e.target.classList.contains('tab-button') && switchToTab(e.target.dataset.tab));
+            document.querySelector('[aria-label="Tabs"]').addEventListener('click', (e) => { if (e.target.classList.contains('tab-button')) { switchToTab(e.target.dataset.tab); }});
             addEmployeeBtn.addEventListener('click', () => openEmployeeModal());
             addCompanyBtn.addEventListener('click', () => openCompanyModal());
             cancelBtn.addEventListener('click', closeEmployeeModal);
             cancelCompanyBtn.addEventListener('click', closeCompanyModal);
-            employeeModal.addEventListener('click', (e) => { if (e.target.classList.contains('payment-type-btn')) { const type = e.target.dataset.type; document.getElementById('employee-payment-type').value = type; document.querySelectorAll('.payment-type-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.type === type)); const isHourly = type === 'hourly'; document.getElementById('workload-wrapper').style.display = isHourly ? 'none' : 'block'; document.getElementById('salary-label').textContent = isHourly ? 'Valor por Hora (R$)' : 'Salário (R$)'; document.getElementById('employee-workload').required = !isHourly; } else if (e.target === employeeModal) { closeEmployeeModal(); } });
-            companyModal.addEventListener('click', (e) => e.target === companyModal && closeCompanyModal());
+            
+            addClickOutsideToClose(employeeModal, closeEmployeeModal);
+            addClickOutsideToClose(companyModal, closeCompanyModal);
+            addClickOutsideToClose(deleteConfirmModal, closeDeleteModal);
+            addClickOutsideToClose(authModal, () => { authModal.classList.add('hidden'); authModal.classList.remove('flex'); });
+
             employeeForm.addEventListener('submit', handleEmployeeFormSubmit);
             companyForm.addEventListener('submit', handleCompanyFormSubmit);
             cancelDeleteBtn.addEventListener('click', closeDeleteModal);
-            deleteConfirmModal.addEventListener('click', (e) => e.target === deleteConfirmModal && closeDeleteModal());
             confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
             monthSelect.addEventListener('change', handleDateChange);
             yearSelect.addEventListener('change', handleDateChange);
@@ -981,25 +1047,67 @@
             exportPdfBtn.addEventListener('click', handlePdfExport);
             exportCsvBtn.addEventListener('click', handleCsvExport);
             saveTimesheetBtn.addEventListener('click', handleSaveTimesheet);
-            employeeList.addEventListener('click', (e) => { const row = e.target.closest('tr'); if (!row) return; const id = row.dataset.id; if (e.target.classList.contains('edit-btn')) openEmployeeModal(state.employees.find(emp => emp.id === id)); else if (e.target.classList.contains('delete-btn')) openDeleteModal(id, 'employee'); else if (e.target.classList.contains('go-to-timesheet-btn')) { const employee = state.employees.find(emp => emp.id === id); if(employee){ const company = state.companies.find(c => c.id === employee.companyId); state.apontamentoCompanyId = employee.companyId; state.currentEmployeeId = id; if (apontamentoCompanyInput && company) { apontamentoCompanyInput.value = company.nome; apontamentoCompanyInput.dataset.selectedId = company.id; } else { apontamentoCompanyInput.value = ''; } if (apontamentoEmployeeInput) { apontamentoEmployeeInput.value = employee.name; apontamentoEmployeeInput.dataset.selectedId = id; apontamentoEmployeeInput.disabled = false; } switchToTab('apontamentos'); } } });
+            employeeList.addEventListener('click', (e) => { const row = e.target.closest('tr'); if (!row) return; const id = row.dataset.id; if (e.target.classList.contains('edit-btn')) openEmployeeModal(state.employees.find(emp => emp.id === id)); else if (e.target.classList.contains('delete-btn')) openDeleteModal(id, 'employee'); else if (e.target.classList.contains('go-to-timesheet-btn')) { handleNavigationWithUnsavedChanges(() => {const employee = state.employees.find(emp => emp.id === id); if(employee){ const company = state.companies.find(c => c.id === employee.companyId); state.apontamentoCompanyId = employee.companyId; state.currentEmployeeId = id; if (apontamentoCompanyInput && company) { apontamentoCompanyInput.value = company.nome; apontamentoCompanyInput.dataset.selectedId = company.id; } else { apontamentoCompanyInput.value = ''; } if (apontamentoEmployeeInput) { apontamentoEmployeeInput.value = employee.name; apontamentoEmployeeInput.dataset.selectedId = id; apontamentoEmployeeInput.disabled = false; } switchToTab('apontamentos'); }}); } });
             companyListBody.addEventListener('click', (e) => { const row = e.target.closest('tr'); if (!row) return; const id = row.dataset.id; if (e.target.classList.contains('edit-company-btn')) openCompanyModal(state.companies.find(c => c.id === id)); else if (e.target.classList.contains('delete-company-btn')) openDeleteModal(id, 'company'); });
             timesheetBody.addEventListener('change', handleTimesheetInputChange);
             timesheetBody.addEventListener('keydown', handleTimesheetNavigation);
             timesheetBody.addEventListener('input', e => { if (e.target.matches('.time-input, .workload-input, .manual-input')) { const input = e.target; let value = input.value.replace(/\D/g, ''); input.value = value.length > 2 ? value.slice(0, 2) + ':' + value.slice(2, 4) : value; } });
             timesheetBody.addEventListener('blur', e => { if (e.target.matches('.time-input, .workload-input, .manual-input')) { const input = e.target; if (input.value.length > 0 && !/^\d{2}:\d{2}$/.test(input.value)) input.value = ''; else if (input.value) { const [hours, minutes] = input.value.split(':').map(Number); if (hours > 23 || minutes > 59) input.value = ''; } } }, true);
-            employeeForm.addEventListener('input', e => { if (e.target.id === 'employee-workload') { const input = e.target; let value = input.value.replace(/\D/g, ''); input.value = value.length > 2 ? value.slice(0, 2) + ':' + value.slice(2, 4) : value; } });
-            employeeForm.addEventListener('blur', e => { if (e.target.id === 'employee-workload') { const input = e.target; if (input.value.length > 0 && !/^\d{2}:\d{2}$/.test(input.value)) input.value = '08:00'; else if (input.value) { const [hours, minutes] = input.value.split(':').map(Number); if (hours > 23 || minutes > 59) input.value = '08:00'; } } }, true);
         };
         
         // Auth event listeners
         loginBtn.addEventListener('click', () => { authModal.classList.remove('hidden'); authModal.classList.add('flex'); });
         closeAuthModalBtn.addEventListener('click', () => { authModal.classList.add('hidden'); authModal.classList.remove('flex'); });
-        authModal.addEventListener('click', (e) => { if(e.target === authModal) { authModal.classList.add('hidden'); authModal.classList.remove('flex'); } });
-        showRegisterViewBtn.addEventListener('click', (e) => { e.preventDefault(); loginView.classList.add('hidden'); registerView.classList.remove('hidden'); });
-        showLoginViewBtn.addEventListener('click', (e) => { e.preventDefault(); registerView.classList.add('hidden'); loginView.classList.remove('hidden'); });
+        
+        showRegisterViewBtn.addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            document.getElementById('register-email').value = document.getElementById('login-email').value;
+            document.getElementById('register-password').value = document.getElementById('login-password').value;
+            loginView.classList.add('hidden'); 
+            registerView.classList.remove('hidden'); 
+        });
+        showLoginViewBtn.addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            document.getElementById('login-email').value = document.getElementById('register-email').value;
+            document.getElementById('login-password').value = document.getElementById('register-password').value;
+            registerView.classList.add('hidden'); 
+            loginView.classList.remove('hidden'); 
+        });
         logoutBtn.addEventListener('click', () => { signOut(auth); });
-        loginForm.addEventListener('submit', async (e) => { e.preventDefault(); loginErrorEl.textContent = ''; const email = document.getElementById('login-email').value; const password = document.getElementById('login-password').value; try { await signInWithEmailAndPassword(auth, email, password); authModal.classList.add('hidden'); authModal.classList.remove('flex'); } catch (error) { loginErrorEl.textContent = 'Email ou senha inválidos.'; } });
-        registerForm.addEventListener('submit', async (e) => { e.preventDefault(); registerErrorEl.textContent = ''; const email = document.getElementById('register-email').value; const password = document.getElementById('register-password').value; try { await createUserWithEmailAndPassword(auth, email, password); authModal.classList.add('hidden'); authModal.classList.remove('flex'); } catch (error) { if (error.code === 'auth/email-already-in-use') { registerErrorEl.textContent = 'Este email já está em uso.'; } else if (error.code === 'auth/weak-password') { registerErrorEl.textContent = 'A senha deve ter no mínimo 6 caracteres.'; } else { registerErrorEl.textContent = 'Ocorreu um erro ao criar a conta.'; } } });
+
+        loginForm.addEventListener('submit', async (e) => { 
+            e.preventDefault(); 
+            loginErrorEl.textContent = ''; 
+            const email = document.getElementById('login-email').value; 
+            const password = document.getElementById('login-password').value; 
+            const rememberMe = document.getElementById('remember-me').checked;
+            const persistence = rememberMe ? indexedDBLocalPersistence : browserSessionPersistence;
+            try { 
+                await setPersistence(auth, persistence);
+                await signInWithEmailAndPassword(auth, email, password); 
+                authModal.classList.add('hidden'); 
+                authModal.classList.remove('flex'); 
+            } catch (error) { 
+                console.error("Login error:", error.code, error.message);
+                loginErrorEl.textContent = 'Email ou senha inválidos.'; 
+            } 
+        });
+        registerForm.addEventListener('submit', async (e) => { 
+            e.preventDefault(); 
+            registerErrorEl.textContent = ''; 
+            const email = document.getElementById('register-email').value; 
+            const password = document.getElementById('register-password').value; 
+            try { 
+                await createUserWithEmailAndPassword(auth, email, password); 
+                authModal.classList.add('hidden'); 
+                authModal.classList.remove('flex'); 
+            } catch (error) { 
+                console.error("Register error:", error.code, error.message);
+                if (error.code === 'auth/email-already-in-use') { registerErrorEl.textContent = 'Este email já está em uso.'; } 
+                else if (error.code === 'auth/weak-password') { registerErrorEl.textContent = 'A senha deve ter no mínimo 6 caracteres.'; } 
+                else { registerErrorEl.textContent = 'Ocorreu um erro ao criar a conta.'; } 
+            } 
+        });
         
         init();
     </script>
