@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apontamento de Horas Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-button.active {
+            border-bottom-color: #3b82f6;
+            color: #3b82f6;
+            font-weight: 600;
+        }
+        /* Custom scrollbar for better aesthetics */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        /* Styles for custom searchable dropdown */
+        .searchable-dropdown {
+            position: relative;
+        }
+        .searchable-dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: white;
+            border: 1px solid #d1d5db;
+            border-top: none;
+            border-radius: 0 0 0.5rem 0.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .searchable-dropdown-item {
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+        }
+        .searchable-dropdown-item:hover, .searchable-dropdown-item.highlighted {
+            background-color: #eff6ff;
+        }
+         .searchable-dropdown-item small {
+            color: #6b7280;
+         }
+         .payment-type-btn.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+            z-index: 10;
+         }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- Auth Modal -->
+        <div id="auth-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+            <div class="max-w-md w-full p-8 bg-white rounded-xl shadow-md border border-slate-200 relative">
+                <button id="close-auth-modal" class="absolute top-4 right-4 text-slate-500 hover:text-slate-800 text-2xl font-bold">&times;</button>
+                <!-- Login Form -->
+                <div id="login-view">
+                    <h2 class="text-2xl font-bold text-center mb-6">Entrar no Sistema</h2>
+                    <form id="login-form">
+                        <div class="mb-4">
+                            <label for="login-email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                            <input type="email" id="login-email" class="w-full p-2 border border-slate-300 rounded-lg" required autocomplete="email">
+                        </div>
+                        <div class="mb-6">
+                            <label for="login-password" class="block text-sm font-medium text-slate-700 mb-1">Senha</label>
+                            <input type="password" id="login-password" class="w-full p-2 border border-slate-300 rounded-lg" required autocomplete="current-password">
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Entrar</button>
+                        <p id="login-error" class="text-red-500 text-sm mt-2 text-center h-4"></p>
+                    </form>
+                    <p class="text-center text-sm mt-4">
+                        Não tem uma conta? <a href="#" id="show-register-view" class="font-medium text-blue-600 hover:underline">Cadastre-se</a>
+                    </p>
+                </div>
+                <!-- Register Form -->
+                <div id="register-view" class="hidden">
+                    <h2 class="text-2xl font-bold text-center mb-6">Criar Conta</h2>
+                    <form id="register-form">
+                        <div class="mb-4">
+                            <label for="register-email" class="block text-sm font-medium text-slate-700 mb-1">Email</label>
+                            <input type="email" id="register-email" class="w-full p-2 border border-slate-300 rounded-lg" required autocomplete="email">
+                        </div>
+                        <div class="mb-6">
+                            <label for="register-password" class="block text-sm font-medium text-slate-700 mb-1">Senha (mínimo 6 caracteres)</label>
+                            <input type="password" id="register-password" class="w-full p-2 border border-slate-300 rounded-lg" required autocomplete="new-password">
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Criar Conta</button>
+                        <p id="register-error" class="text-red-500 text-sm mt-2 text-center h-4"></p>
+                    </form>
+                    <p class="text-center text-sm mt-4">
+                        Já tem uma conta? <a href="#" id="show-login-view" class="font-medium text-blue-600 hover:underline">Entrar</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading state -->
+        <div id="loading" class="text-center p-8">
+            <p class="text-slate-500">Carregando...</p>
+        </div>
+
+        <!-- Main Content (hidden until loaded) -->
+        <main id="main-content" class="hidden">
+            <header class="mb-8 flex justify-between items-start">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-900">Apontamento de Horas Web</h1>
+                    <p class="text-slate-500 mt-1">Gerencie as horas de trabalho da sua equipe de forma simples e eficiente.</p>
+                </div>
+                <div class="text-right">
+                    <button id="login-btn" class="hidden bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg shadow-sm hover:bg-slate-100 transition">Fazer Login / Cadastrar</button>
+                    <div id="user-info" class="hidden">
+                        <p id="user-email" class="text-sm text-slate-600 font-medium"></p>
+                        <button id="logout-btn" class="text-sm text-blue-600 hover:underline">Sair</button>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Global Settings -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
+                <h2 class="text-xl font-semibold mb-4">Selecione o Período</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="month-select" class="block text-sm font-medium text-slate-700 mb-1">Mês</label>
+                        <select id="month-select" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"></select>
+                    </div>
+                    <div>
+                        <label for="year-select" class="block text-sm font-medium text-slate-700 mb-1">Ano</label>
+                        <input type="number" id="year-select" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="border-b border-slate-200 mb-6">
+                <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                    <button class="tab-button active" data-tab="funcionarios">Funcionários</button>
+                    <button class="tab-button" data-tab="empresas">Empresas</button>
+                    <button class="tab-button" data-tab="apontamentos">Apontamentos</button>
+                    <button class="tab-button" data-tab="relatorio">Relatório</button>
+                    <button class="tab-button" data-tab="configuracoes">Configurações</button>
+                </nav>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="tab-content">
+                <!-- Funcionarios Tab -->
+                <div id="funcionarios-tab" class="tab-pane active">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <input type="text" id="search-employee" placeholder="Pesquisar por nome..." class="md:col-span-1 w-full p-2 border border-slate-300 rounded-lg shadow-sm">
+                        <div id="filter-company-container" class="md:col-span-1 w-full"></div>
+                        <button id="add-employee-btn" class="md:col-start-3 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-blue-700 transition justify-self-end">Adicionar Funcionário</button>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-100 text-slate-600 uppercase tracking-wider">
+                                    <tr>
+                                        <th class="p-4">Nome</th>
+                                        <th class="p-4">Empresa</th>
+                                        <th class="p-4">Carga Horária</th>
+                                        <th class="p-4">Salário / Hora (R$)</th>
+                                        <th class="p-4">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="employee-list" class="divide-y divide-slate-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Empresas Tab -->
+                <div id="empresas-tab" class="tab-pane hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">Gerenciar Empresas</h3>
+                        <button id="add-company-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-blue-700 transition">Adicionar Empresa</button>
+                    </div>
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-100 text-slate-600 uppercase tracking-wider">
+                                    <tr>
+                                        <th class="p-4">Código</th>
+                                        <th class="p-4">Nome</th>
+                                        <th class="p-4">CNPJ</th>
+                                        <th class="p-4">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="company-list-body" class="divide-y divide-slate-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Apontamentos Tab -->
+                <div id="apontamentos-tab" class="tab-pane hidden">
+                     <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow">
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Selecione a Empresa</label>
+                                <div id="apontamento-company-container"></div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Selecione o Funcionário</label>
+                                <div id="apontamento-employee-container"></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 self-end">
+                            <span id="save-status" class="text-sm text-slate-500 font-medium"></span>
+                            <button id="save-timesheet-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-blue-700 transition disabled:bg-slate-400 disabled:cursor-not-allowed" disabled>Salvar Alterações</button>
+                            <button id="export-csv-btn" class="bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-emerald-700 transition">Exportar CSV</button>
+                            <button id="export-pdf-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-green-700 transition">Imprimir / Gerar PDF</button>
+                        </div>
+                    </div>
+                    <div id="timesheet-container" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-100 text-slate-600 uppercase tracking-wider">
+                                    <tr>
+                                        <th class="p-3 text-center">Dia</th>
+                                        <th class="p-3">Carga Dia</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3">Ent. 1</th>
+                                        <th class="p-3">Saí. 1</th>
+                                        <th class="p-3">Ent. 2</th>
+                                        <th class="p-3">Saí. 2</th>
+                                        <th class="p-3 text-center">Feriado</th>
+                                        <th class="p-3 text-center">Total Trab.</th>
+                                        <th class="p-3 text-center">Saldo</th>
+                                        <th class="p-3">H.E. 50%</th>
+                                        <th class="p-3">H.E. 100%</th>
+                                        <th class="p-3">Ad. Not.</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="timesheet-body" class="divide-y divide-slate-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Relatorio Tab -->
+                <div id="relatorio-tab" class="tab-pane hidden">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Filtrar por Empresa</label>
+                        <div id="report-company-container" class="max-w-md"></div>
+                    </div>
+                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-slate-100 text-slate-600 uppercase tracking-wider">
+                                    <tr>
+                                        <th class="p-4">Nome</th>
+                                        <th class="p-4 text-center">Total Trab.</th>
+                                        <th class="p-4 text-center">Saldo</th>
+                                        <th class="p-4 text-right">H. Extra 50%</th>
+                                        <th class="p-4 text-right">H. Extra 100%</th>
+                                        <th class="p-4 text-right">Ad. Noturno</th>
+                                        <th class="p-4 text-right font-bold">Total Variáveis (R$)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="report-body" class="divide-y divide-slate-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configurações Tab -->
+                <div id="configuracoes-tab" class="tab-pane hidden">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 class="text-lg font-semibold mb-4">Configurações de Cálculo</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 class="font-medium mb-2">Adicional Noturno</h4>
+                                <div class="flex items-center gap-4">
+                                    <div>
+                                        <label for="nightly-start" class="block text-sm text-slate-600 mb-1">Início</label>
+                                        <input type="time" id="nightly-start" value="22:00" class="w-full p-2 border border-slate-300 rounded-lg">
+                                    </div>
+                                    <div>
+                                        <label for="nightly-end" class="block text-sm text-slate-600 mb-1">Fim</label>
+                                        <input type="time" id="nightly-end" value="05:00" class="w-full p-2 border border-slate-300 rounded-lg">
+                                    </div>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-2">Define o período de trabalho considerado como noturno.</p>
+                            </div>
+                             <div>
+                                <h4 class="font-medium mb-2">Percentual do Adicional Noturno</h4>
+                                <div>
+                                    <label for="nightly-percentage" class="block text-sm text-slate-600 mb-1">Percentual (%)</label>
+                                    <input type="number" id="nightly-percentage" value="20" step="0.1" class="w-full p-2 border border-slate-300 rounded-lg">
+                                </div>
+                                <p class="text-xs text-slate-500 mt-2">Valor percentual a ser adicionado sobre a hora normal.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="employee-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h2 id="modal-title" class="text-xl font-bold mb-4">Adicionar Funcionário</h2>
+            <form id="employee-form">
+                <input type="hidden" id="employee-id">
+                <div class="grid grid-cols-1 gap-4">
+                    <div id="employee-name-wrapper">
+                        <label for="employee-name" class="block text-sm font-medium text-slate-700">Nome</label>
+                        <input type="text" id="employee-name" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2" required>
+                    </div>
+                    <div>
+                        <label for="employee-company-select" class="block text-sm font-medium text-slate-700">Empresa</label>
+                        <div id="employee-company-container" class="mt-1 w-full"></div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700">Tipo de Pagamento</label>
+                        <div class="mt-1 flex rounded-md shadow-sm">
+                            <button type="button" data-type="monthly" class="payment-type-btn relative inline-flex items-center space-x-2 rounded-l-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Mensalista</button>
+                            <button type="button" data-type="hourly" class="payment-type-btn relative -ml-px inline-flex items-center space-x-2 rounded-r-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Horista</button>
+                        </div>
+                        <input type="hidden" id="employee-payment-type" value="monthly">
+                    </div>
+                     <div id="salary-wrapper">
+                        <label for="employee-salary" id="salary-label" class="block text-sm font-medium text-slate-700">Salário (R$)</label>
+                        <input type="number" id="employee-salary" step="0.01" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2">
+                    </div>
+                    <div id="workload-wrapper">
+                        <label for="employee-workload" class="block text-sm font-medium text-slate-700">Carga Horária Padrão</label>
+                        <input type="text" id="employee-workload" value="08:00" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2" required placeholder="HH:MM">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" id="cancel-btn" class="bg-slate-200 text-slate-800 px-4 py-2 rounded-lg hover:bg-slate-300">Cancelar</button>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="company-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h2 id="company-modal-title" class="text-xl font-bold mb-4">Adicionar Empresa</h2>
+            <form id="company-form">
+                <input type="hidden" id="company-id">
+                <div class="grid grid-cols-1 gap-4">
+                    <div>
+                        <label for="company-code" class="block text-sm font-medium text-slate-700">Código</label>
+                        <input type="text" id="company-code" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2" required>
+                    </div>
+                    <div>
+                        <label for="company-name" class="block text-sm font-medium text-slate-700">Nome</label>
+                        <input type="text" id="company-name" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2" required>
+                    </div>
+                    <div>
+                        <label for="company-cnpj" class="block text-sm font-medium text-slate-700">CNPJ (Opcional)</label>
+                        <input type="text" id="company-cnpj" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-3 mt-6">
+                    <button type="button" id="cancel-company-btn" class="bg-slate-200 text-slate-800 px-4 py-2 rounded-lg hover:bg-slate-300">Cancelar</button>
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div id="delete-confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+            <h2 class="text-xl font-bold mb-2">Confirmar Exclusão</h2>
+            <p id="delete-confirm-text" class="text-slate-600 mb-6">Tem certeza?</p>
+            <div class="flex justify-end space-x-3">
+                <button type="button" id="cancel-delete-btn" class="bg-slate-200 text-slate-800 px-4 py-2 rounded-lg hover:bg-slate-300">Cancelar</button>
+                <button type="button" id="confirm-delete-btn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Excluir</button>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, setDoc, deleteDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- CONFIGURAÇÃO DO FIREBASE ---
+        const firebaseConfig = {
+  	apiKey: "AIzaSyDO_iyeQq4SroI_OEZWq8YQqU7en-0beZ8",
+  	authDomain: "apontamentos-sec.firebaseapp.com",
+  	projectId: "apontamentos-sec",
+  	storageBucket: "apontamentos-sec.firebasestorage.app",
+  	messagingSenderId: "193014581798",
+  	appId: "1:193014581798:web:ef8bc022d7476768ef74e7",
+  	measurementId: "G-XJ2J5X4MPK"
+	};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'apontamentos-sec';
+        let db, auth, userId;
+        let unsubscribeCompanies, unsubscribeEmployees, unsubscribeTimesheets;
+
+        // --- ELEMENTOS DA UI ---
+        const loadingEl = document.getElementById('loading');
+        const mainContentEl = document.getElementById('main-content');
+        const authModal = document.getElementById('auth-modal');
+        const closeAuthModalBtn = document.getElementById('close-auth-modal');
+        const loginView = document.getElementById('login-view');
+        const registerView = document.getElementById('register-view');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const showRegisterViewBtn = document.getElementById('show-register-view');
+        const showLoginViewBtn = document.getElementById('show-login-view');
+        const loginBtn = document.getElementById('login-btn');
+        const userInfoEl = document.getElementById('user-info');
+        const userEmailEl = document.getElementById('user-email');
+        const logoutBtn = document.getElementById('logout-btn');
+        const loginErrorEl = document.getElementById('login-error');
+        const registerErrorEl = document.getElementById('register-error');
+        
+        const employeeList = document.getElementById('employee-list');
+        const addEmployeeBtn = document.getElementById('add-employee-btn');
+        const employeeModal = document.getElementById('employee-modal');
+        const cancelBtn = document.getElementById('cancel-btn');
+        const employeeForm = document.getElementById('employee-form');
+        const modalTitle = document.getElementById('modal-title');
+        const monthSelect = document.getElementById('month-select');
+        const yearSelect = document.getElementById('year-select');
+        const timesheetBody = document.getElementById('timesheet-body');
+        const reportBody = document.getElementById('report-body');
+        const searchEmployeeInput = document.getElementById('search-employee');
+        const filterCompanyContainer = document.getElementById('filter-company-container');
+        const employeeCompanyContainer = document.getElementById('employee-company-container');
+        const apontamentoCompanyContainer = document.getElementById('apontamento-company-container');
+        const apontamentoEmployeeContainer = document.getElementById('apontamento-employee-container');
+        const reportCompanyContainer = document.getElementById('report-company-container');
+        const exportPdfBtn = document.getElementById('export-pdf-btn');
+        const exportCsvBtn = document.getElementById('export-csv-btn');
+        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const deleteConfirmText = document.getElementById('delete-confirm-text');
+        const addCompanyBtn = document.getElementById('add-company-btn');
+        const companyListBody = document.getElementById('company-list-body');
+        const companyModal = document.getElementById('company-modal');
+        const companyForm = document.getElementById('company-form');
+        const cancelCompanyBtn = document.getElementById('cancel-company-btn');
+        const saveTimesheetBtn = document.getElementById('save-timesheet-btn');
+        const saveStatusEl = document.getElementById('save-status');
+
+        // --- ESTADO DA APLICAÇÃO ---
+        let state = {
+            employees: [],
+            companies: [],
+            timesheets: {},
+            currentEmployeeId: null,
+            apontamentoCompanyId: null,
+            reportCompanyFilter: '',
+            currentMonth: new Date().getMonth(),
+            currentYear: new Date().getFullYear(),
+            searchTerm: '',
+            companyFilter: '',
+            hasUnsavedChanges: false,
+        };
+        let itemToDelete = { id: null, type: null, name: '' };
+        let employeeModalState = null;
+        let companyToCreateFromModal = null;
+        let apontamentoCompanyInput = null;
+        let apontamentoEmployeeInput = null;
+        let cleanupNameSuggestions = null;
+        let appComponentsInitialized = false;
+
+        const statusMap = {
+            workday: 'Trabalho',
+            absent: 'Falta',
+            day_off: 'Folga',
+            certificate: 'Atestado'
+        };
+
+        // --- FUNÇÕES DE LÓGICA E CÁLCULO ---
+        const timeToMinutes = (timeStr) => {if (!timeStr || !/^\d{2}:\d{2}$/.test(timeStr)) return 0;const [hours, minutes] = timeStr.split(':').map(Number);return isNaN(hours) || isNaN(minutes) ? 0 : hours * 60 + minutes;};
+        const minutesToTime = (minutes, showSignal = false) => {if (isNaN(minutes) || minutes === null) return "00:00";const sign = minutes < 0 ? "-" : (showSignal ? "+" : "");const absMinutes = Math.abs(Math.round(minutes));const h = Math.floor(absMinutes / 60).toString().padStart(2, '0');const m = (absMinutes % 60).toString().padStart(2, '0');return `${sign}${h}:${m}`;};
+        const formatCurrency = (value) => (value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        
+        const calculateIntervalOverlap = (start1, end1, start2, end2) => {
+            const overlapStart = Math.max(start1, start2);
+            const overlapEnd = Math.min(end1, end2);
+            return Math.max(0, overlapEnd - overlapStart);
+        };
+
+        const calculateNightlyOverlap = (workStart, workEnd) => {
+            if (!workStart && !workEnd || workStart === workEnd) return 0;
+            const nightStart = timeToMinutes(document.getElementById('nightly-start').value);
+            const nightEnd = timeToMinutes(document.getElementById('nightly-end').value);
+            let totalOverlap = 0;
+            if (nightStart <= nightEnd) {
+                if (workStart < workEnd) { totalOverlap += calculateIntervalOverlap(workStart, workEnd, nightStart, nightEnd); }
+                else { totalOverlap += calculateIntervalOverlap(workStart, 1440, nightStart, nightEnd); totalOverlap += calculateIntervalOverlap(0, workEnd, nightStart, nightEnd); }
+            } else {
+                const nightPeriod1 = { start: nightStart, end: 1440 }, nightPeriod2 = { start: 0, end: nightEnd };
+                if (workStart < workEnd) { totalOverlap += calculateIntervalOverlap(workStart, workEnd, nightPeriod1.start, nightPeriod1.end); totalOverlap += calculateIntervalOverlap(workStart, workEnd, nightPeriod2.start, nightPeriod2.end); }
+                else { const workPeriod1 = { start: workStart, end: 1440 }, workPeriod2 = { start: 0, end: workEnd }; totalOverlap += calculateIntervalOverlap(workPeriod1.start, workPeriod1.end, nightPeriod1.start, nightPeriod1.end); totalOverlap += calculateIntervalOverlap(workPeriod2.start, workPeriod2.end, nightPeriod2.start, nightPeriod2.end); }
+            }
+            return totalOverlap;
+        };
+
+        const calculateDayTotals = (dayData, employee) => {
+            const { workload = '08:00', paymentType = 'monthly' } = employee || {};
+            const { status = 'workday', is_holiday = false, daily_workload = workload } = dayData;
+            const workloadMinutes = timeToMinutes(daily_workload);
+            if (status === 'absent') return { totalWorkedMinutes: 0, balanceMinutes: -workloadMinutes, overtime50Minutes: 0, overtime100Minutes: 0, nightlyMinutes: 0 };
+            if (['day_off', 'certificate'].includes(status)) return { totalWorkedMinutes: 0, balanceMinutes: 0, overtime50Minutes: 0, overtime100Minutes: 0, nightlyMinutes: 0 };
+            const entry1 = timeToMinutes(dayData.entry1), exit1 = timeToMinutes(dayData.exit1), entry2 = timeToMinutes(dayData.entry2), exit2 = timeToMinutes(dayData.exit2);
+            let period1 = (exit1 > 0 && entry1 > 0) ? (exit1 >= entry1 ? exit1 - entry1 : (1440 - entry1) + exit1) : 0;
+            let period2 = (exit2 > 0 && entry2 > 0) ? (exit2 >= entry2 ? exit2 - entry2 : (1440 - entry2) + exit2) : 0;
+            const totalWorkedMinutes = period1 + period2;
+            let nightlyMinutesRaw = calculateNightlyOverlap(entry1, exit1) + calculateNightlyOverlap(entry2, exit2);
+            const nightlyMinutesForPayment = nightlyMinutesRaw * (60 / 52.5);
+            if (paymentType === 'hourly') {
+                return { totalWorkedMinutes, balanceMinutes: 0, overtime50Minutes: 0, overtime100Minutes: is_holiday ? totalWorkedMinutes : 0, nightlyMinutes: nightlyMinutesForPayment };
+            }
+            const balanceMinutes = totalWorkedMinutes - workloadMinutes;
+            return { totalWorkedMinutes, balanceMinutes, overtime50Minutes: is_holiday ? 0 : Math.max(0, balanceMinutes), overtime100Minutes: is_holiday ? totalWorkedMinutes : 0, nightlyMinutes: nightlyMinutesForPayment };
+        };
+        
+        // --- FUNÇÕES DE RENDERIZAÇÃO E UI ---
+        const updateSaveStatus = (isSaving = false, isSaved = false) => {
+            if (isSaving) { saveStatusEl.textContent = 'Salvando...'; saveTimesheetBtn.disabled = true; saveTimesheetBtn.textContent = 'Salvando...'; }
+            else if (isSaved) { saveStatusEl.textContent = 'Salvo!'; saveTimesheetBtn.disabled = true; saveTimesheetBtn.textContent = 'Salvar Alterações'; setTimeout(() => { if(saveStatusEl.textContent === 'Salvo!') { saveStatusEl.textContent = ''; } }, 2500); }
+            else if (state.hasUnsavedChanges) { saveStatusEl.textContent = 'Alterações não salvas'; saveTimesheetBtn.disabled = false; saveTimesheetBtn.textContent = 'Salvar Alterações'; }
+            else { saveStatusEl.textContent = ''; saveTimesheetBtn.disabled = true; saveTimesheetBtn.textContent = 'Salvar Alterações'; }
+        };
+
+        const populateDateSelectors = () => {
+            const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+            monthSelect.innerHTML = months.map((month, index) => `<option value="${index}" ${index === state.currentMonth ? 'selected' : ''}>${month}</option>`).join('');
+            yearSelect.value = state.currentYear;
+        };
+        
+        const renderCompanyList = () => { companyListBody.innerHTML = state.companies.map(c => `<tr data-id="${c.id}"><td class="p-4 font-medium">${c.codigo}</td><td class="p-4">${c.nome}</td><td class="p-4">${c.cnpj || '-'}</td><td class="p-4 space-x-2 whitespace-nowrap"><button class="edit-company-btn text-blue-600 hover:text-blue-800">Editar</button><button class="delete-company-btn text-red-600 hover:text-red-800">Excluir</button></td></tr>`).join(''); };
+
+        const renderEmployeeList = () => {
+            const filteredEmployees = state.employees.filter(emp => emp.name.toLowerCase().includes(state.searchTerm.toLowerCase()) && (state.companyFilter === '' || emp.companyId === state.companyFilter));
+            employeeList.innerHTML = filteredEmployees.map(emp => {
+                const company = state.companies.find(c => c.id === emp.companyId);
+                const companyName = company ? `${company.codigo} - ${company.nome}` : '-';
+                const salaryDisplay = emp.paymentType === 'hourly' ? `${parseFloat(emp.salary || 0).toFixed(2)} / hora` : (emp.salary && parseFloat(emp.salary) > 0 ? parseFloat(emp.salary).toFixed(2) : '-');
+                const workloadDisplay = emp.paymentType === 'hourly' ? 'N/A' : (emp.workload || '08:00');
+                return `<tr data-id="${emp.id}"><td class="p-4 font-medium">${emp.name}</td><td class="p-4">${companyName}</td><td class="p-4">${workloadDisplay}</td><td class="p-4">${salaryDisplay}</td><td class="p-4 space-x-2 whitespace-nowrap"><button class="go-to-timesheet-btn text-green-600 hover:text-green-800 font-semibold">Apontamentos</button><button class="edit-btn text-blue-600 hover:text-blue-800">Editar</button><button class="delete-btn text-red-600 hover:text-red-800">Excluir</button></td></tr>`;
+            }).join('');
+        };
+
+        const renderTimesheet = () => {
+            state.hasUnsavedChanges = false;
+            updateSaveStatus();
+            const currentEmployee = state.employees.find(e => e.id === state.currentEmployeeId);
+            if (!currentEmployee) { timesheetBody.innerHTML = `<tr><td colspan="13" class="p-4 text-center text-slate-500">Selecione uma empresa e um funcionário para ver os apontamentos.</td></tr>`; return; }
+            const daysInMonth = new Date(state.currentYear, state.currentMonth + 1, 0).getDate();
+            const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+            const timesheetId = `${state.currentEmployeeId}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
+            const timesheetData = { ...(state.timesheets[timesheetId] || {}) };
+            timesheetBody.innerHTML = days.map(day => {
+                const dayStr = day.toString().padStart(2, '0');
+                const date = new Date(state.currentYear, state.currentMonth, day);
+                const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'short' }).slice(0, 3);
+                const dayData = timesheetData[dayStr] || {};
+                const { totalWorkedMinutes, balanceMinutes, overtime50Minutes, overtime100Minutes, nightlyMinutes } = calculateDayTotals(dayData, currentEmployee);
+                const status = dayData.status || 'workday';
+                const isWorkday = !['absent', 'day_off', 'certificate'].includes(status);
+                const workloadDisplay = currentEmployee.paymentType === 'hourly' ? 'N/A' : (dayData.daily_workload || currentEmployee.workload);
+                const balanceDisplay = currentEmployee.paymentType === 'hourly' ? 'N/A' : minutesToTime(balanceMinutes, true);
+                const balanceClass = balanceMinutes < 0 ? 'text-red-500' : 'text-green-600';
+                const extra50 = dayData.manual_extra50 ? dayData.extra50 : minutesToTime(overtime50Minutes);
+                const extra100 = dayData.manual_extra100 ? dayData.extra100 : minutesToTime(overtime100Minutes);
+                const nightly = dayData.manual_nightly ? dayData.nightly : minutesToTime(nightlyMinutes);
+                return `<tr class="hover:bg-slate-50 ${!isWorkday ? 'bg-slate-100 text-slate-500' : ''}">
+                    <td class="p-2 text-center font-medium"><div class="flex items-center justify-center space-x-2"><span>${dayStr}</span><span class="text-xs text-slate-400">${dayOfWeek}</span></div></td>
+                    <td><input type="text" placeholder="HH:MM" class="workload-input w-24 p-1.5 border border-transparent hover:border-slate-300 focus:border-blue-500 bg-transparent rounded-md" data-day="${dayStr}" data-field="daily_workload" value="${workloadDisplay}" ${!isWorkday || currentEmployee.paymentType === 'hourly' ? 'disabled' : ''}></td>
+                    <td><select class="status-select w-full p-1.5 border border-transparent hover:border-slate-300 bg-transparent rounded-md text-sm" data-day="${dayStr}" data-field="status"><option value="workday" ${status === 'workday' ? 'selected' : ''}>Trabalho</option><option value="absent" ${status === 'absent' ? 'selected' : ''}>Falta</option><option value="day_off" ${status === 'day_off' ? 'selected' : ''}>Folga</option><option value="certificate" ${status === 'certificate' ? 'selected' : ''}>Atestado</option></select></td>
+                    ${['entry1', 'exit1', 'entry2', 'exit2'].map(field => `<td><input type="text" placeholder="HH:MM" class="time-input w-24 p-1.5 border border-transparent hover:border-slate-300 focus:border-blue-500 bg-transparent rounded-md" data-day="${dayStr}" data-field="${field}" value="${dayData[field] || ''}" ${!isWorkday ? 'disabled' : ''}></td>`).join('')}
+                    <td class="p-2 text-center"><input type="checkbox" class="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" data-day="${dayStr}" data-field="is_holiday" ${dayData.is_holiday ? 'checked' : ''}></td>
+                    <td class="p-2 text-center text-slate-600 font-semibold">${minutesToTime(totalWorkedMinutes)}</td>
+                    <td class="p-2 text-center font-semibold ${balanceClass}">${balanceDisplay}</td>
+                    <td><input type="text" placeholder="HH:MM" class="manual-input w-24 p-1.5 border border-transparent hover:border-slate-300 focus:border-blue-500 bg-transparent rounded-md" data-day="${dayStr}" data-field="extra50" value="${extra50}" ${!isWorkday ? 'disabled' : ''}></td>
+                    <td><input type="text" placeholder="HH:MM" class="manual-input w-24 p-1.5 border border-transparent hover:border-slate-300 focus:border-blue-500 bg-transparent rounded-md" data-day="${dayStr}" data-field="extra100" value="${extra100}" ${!isWorkday ? 'disabled' : ''}></td>
+                    <td><input type="text" placeholder="HH:MM" class="manual-input w-24 p-1.5 border border-transparent hover:border-slate-300 focus:border-blue-500 bg-transparent rounded-md" data-day="${dayStr}" data-field="nightly" value="${nightly}" ${!isWorkday ? 'disabled' : ''}></td>
+                </tr>`;
+            }).join('');
+        };
+
+        const calculateMonthTotals = (employee) => {
+            const timesheetId = `${employee.id}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
+            const timesheetData = state.timesheets[timesheetId] || {};
+            const totals = { totalWorked: 0, balance: 0, extra50: 0, extra100: 0, nightly: 0 };
+            Object.values(timesheetData).forEach(dayData => {
+                const dayTotals = calculateDayTotals(dayData, employee);
+                totals.totalWorked += dayTotals.totalWorkedMinutes;
+                totals.balance += dayTotals.balanceMinutes;
+                totals.extra50 += dayData.manual_extra50 ? timeToMinutes(dayData.extra50) : dayTotals.overtime50Minutes;
+                totals.extra100 += dayData.manual_extra100 ? timeToMinutes(dayData.extra100) : dayTotals.overtime100Minutes;
+                totals.nightly += dayData.manual_nightly ? timeToMinutes(dayData.nightly) : dayTotals.nightlyMinutes;
+            });
+            return totals;
+        };
+
+        const renderReport = () => {
+            const nightlyPercentage = parseFloat(document.getElementById('nightly-percentage').value) / 100 || 0.2;
+            const employeesToReport = state.reportCompanyFilter ? state.employees.filter(emp => emp.companyId === state.reportCompanyFilter) : state.employees;
+            reportBody.innerHTML = employeesToReport.map(emp => {
+                const monthTotals = calculateMonthTotals(emp);
+                const hourlyRate = (emp.paymentType === 'hourly') ? parseFloat(emp.salary || 0) : (parseFloat(emp.salary || 0) / 220);
+                let totalVariablesDisplay = '-', extra50Display, extra100Display, nightlyDisplay;
+                if (emp.paymentType === 'hourly') {
+                    const basePay = ((monthTotals.totalWorked - monthTotals.extra100) / 60) * hourlyRate;
+                    const holidayPay = (monthTotals.extra100 / 60) * hourlyRate * 2;
+                    const nightlyBonusValue = (monthTotals.nightly / 60) * hourlyRate * nightlyPercentage;
+                    totalVariablesDisplay = `Total: ${formatCurrency(basePay + holidayPay + nightlyBonusValue)}`;
+                    extra50Display = minutesToTime(0);
+                    extra100Display = formatCurrency(holidayPay);
+                    nightlyDisplay = formatCurrency(nightlyBonusValue);
+                } else {
+                    const extra50Value = (monthTotals.extra50 / 60) * hourlyRate * 1.5;
+                    const extra100Value = (monthTotals.extra100 / 60) * hourlyRate * 2.0;
+                    const nightlyValue = (monthTotals.nightly / 60) * hourlyRate * nightlyPercentage;
+                    totalVariablesDisplay = formatCurrency(extra50Value + extra100Value + nightlyValue);
+                    extra50Display = hourlyRate > 0 ? formatCurrency(extra50Value) : minutesToTime(monthTotals.extra50);
+                    extra100Display = hourlyRate > 0 ? formatCurrency(extra100Value) : minutesToTime(monthTotals.extra100);
+                    nightlyDisplay = hourlyRate > 0 ? formatCurrency(nightlyValue) : minutesToTime(monthTotals.nightly);
+                }
+                const balanceDisplay = emp.paymentType === 'hourly' ? 'N/A' : minutesToTime(monthTotals.balance, true);
+                const balanceClass = monthTotals.balance < 0 ? 'text-red-500' : 'text-green-600';
+                return `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${emp.name}</td><td class="p-4 text-center font-semibold">${minutesToTime(monthTotals.totalWorked)}</td><td class="p-4 text-center font-semibold ${balanceClass}">${balanceDisplay}</td><td class="p-4 text-right">${extra50Display}</td><td class="p-4 text-right">${extra100Display}</td><td class="p-4 text-right">${nightlyDisplay}</td><td class="p-4 text-right font-bold text-blue-700">${totalVariablesDisplay}</td></tr>`;
+            }).join('');
+        };
+
+        const createEmployeeSearchableDropdown = (container, placeholder, getSourceArray, onSelect) => {
+            const id = `searchable-employee-${crypto.randomUUID()}`;
+            container.innerHTML = `<div class="searchable-dropdown w-full"><input type="text" id="${id}-input" placeholder="${placeholder}" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm" autocomplete="off" data-selected-id=""><div id="${id}-list" class="searchable-dropdown-list hidden"></div></div>`;
+            const input = document.getElementById(`${id}-input`), list = document.getElementById(`${id}-list`);
+            let highlightIndex = -1;
+            const updateList = () => { const source = getSourceArray(); const searchTerm = input.value.toLowerCase(); const filtered = source.filter(e => e.name.toLowerCase().includes(searchTerm)); list.innerHTML = filtered.map(e => `<div class="searchable-dropdown-item" data-id="${e.id}">${e.name}</div>`).join(''); list.classList.toggle('hidden', list.innerHTML === ''); highlightIndex = -1; };
+            const selectItem = (item) => { if (!item) return; const id = item.dataset.id; const source = getSourceArray(); const employee = source.find(e => e.id === id); input.value = employee ? employee.name : ''; input.dataset.selectedId = id; onSelect({ id }); list.classList.add('hidden'); };
+            input.addEventListener('input', updateList);
+            input.addEventListener('focus', updateList);
+            input.addEventListener('blur', () => setTimeout(() => list.classList.add('hidden'), 200));
+            list.addEventListener('mousedown', (e) => selectItem(e.target.closest('.searchable-dropdown-item')));
+            input.addEventListener('keydown', (e) => { const items = list.querySelectorAll('.searchable-dropdown-item'); if (!items.length) return; if (e.key === 'ArrowDown') highlightIndex = (highlightIndex + 1) % items.length; else if (e.key === 'ArrowUp') highlightIndex = (highlightIndex - 1 + items.length) % items.length; else if (e.key === 'Enter') { e.preventDefault(); if (highlightIndex > -1) selectItem(items[highlightIndex]); } else if (e.key === 'Escape') list.classList.add('hidden'); else return; items.forEach((item, index) => item.classList.toggle('highlighted', index === highlightIndex)); });
+            return input;
+        };
+        const createCompanySearchableDropdown = (container, placeholder, allowCreate, onSelect) => {
+            const id = `searchable-company-${crypto.randomUUID()}`;
+            container.innerHTML = `<div class="searchable-dropdown w-full"><input type="text" id="${id}-input" placeholder="${placeholder}" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm" autocomplete="off" data-selected-id=""><div id="${id}-list" class="searchable-dropdown-list hidden"></div></div>`;
+            const input = document.getElementById(`${id}-input`), list = document.getElementById(`${id}-list`);
+            let highlightIndex = -1;
+            const updateList = () => { const searchTerm = input.value.toLowerCase(); const filtered = state.companies.filter(c => c.nome.toLowerCase().includes(searchTerm) || c.codigo.toLowerCase().includes(searchTerm)); list.innerHTML = ''; if (allowCreate && searchTerm && !filtered.some(c => c.nome.toLowerCase() === searchTerm || c.codigo.toLowerCase() === searchTerm)) { list.innerHTML += `<div class="searchable-dropdown-item font-medium text-blue-600" data-action="create" data-value="${input.value}">+ Adicionar nova empresa "${input.value}"</div>`; } if (!allowCreate) { list.innerHTML += `<div class="searchable-dropdown-item" data-id="">Todas as Empresas</div>`; } filtered.forEach(c => { list.innerHTML += `<div class="searchable-dropdown-item" data-id="${c.id}">${c.nome} <small class="ml-2">(${c.codigo})</small></div>`; }); list.classList.toggle('hidden', list.innerHTML === ''); highlightIndex = -1; };
+            const selectItem = (item) => { if (!item) return; const id = item.dataset.id; const action = item.dataset.action; if(action === 'create') { onSelect({ action: 'create', value: item.dataset.value }); } else { const company = state.companies.find(c => c.id === id); input.value = company ? company.nome : (id === '' ? 'Todas as Empresas' : ''); input.dataset.selectedId = id; onSelect({ action: 'select', id }); } list.classList.add('hidden'); };
+            input.addEventListener('input', updateList);
+            input.addEventListener('focus', updateList);
+            input.addEventListener('blur', () => setTimeout(() => list.classList.add('hidden'), 200));
+            list.addEventListener('mousedown', (e) => selectItem(e.target.closest('.searchable-dropdown-item')));
+            input.addEventListener('keydown', (e) => { const items = list.querySelectorAll('.searchable-dropdown-item'); if (!items.length) return; if (e.key === 'ArrowDown') highlightIndex = (highlightIndex + 1) % items.length; else if (e.key === 'ArrowUp') highlightIndex = (highlightIndex - 1 + items.length) % items.length; else if (e.key === 'Enter') { e.preventDefault(); if (highlightIndex > -1) selectItem(items[highlightIndex]); } else if (e.key === 'Escape') list.classList.add('hidden'); else return; items.forEach((item, index) => item.classList.toggle('highlighted', index === highlightIndex)); });
+            return input;
+        };
+        const addNameSuggestions = (inputElement) => {
+            const container = inputElement.parentElement;
+            const listId = `suggestion-list-${crypto.randomUUID()}`;
+            let list = document.getElementById(listId);
+            if (list) list.remove();
+            list = document.createElement('div');
+            list.id = listId;
+            list.className = 'searchable-dropdown-list hidden';
+            container.style.position = 'relative';
+            container.appendChild(list);
+            const updateSuggestions = () => { const searchTerm = inputElement.value.toLowerCase(); if (searchTerm.length < 2) { list.classList.add('hidden'); return; } const filtered = state.employees.filter(e => e.name.toLowerCase().includes(searchTerm)); if (filtered.length === 0) { list.classList.add('hidden'); return; } list.innerHTML = filtered.map(e => `<div class="searchable-dropdown-item" data-id="${e.id}">${e.name} <small class="ml-2">já cadastrado</small></div>`).join(''); list.classList.remove('hidden'); };
+            const selectSuggestion = (item) => { if (!item) return; const employee = state.employees.find(e => e.id === item.dataset.id); if (employee) { list.classList.add('hidden'); closeEmployeeModal(); openEmployeeModal(employee); } };
+            const inputHandler = () => updateSuggestions();
+            const blurHandler = () => setTimeout(() => list.classList.add('hidden'), 200);
+            const mousedownHandler = (e) => selectSuggestion(e.target.closest('.searchable-dropdown-item'));
+            inputElement.addEventListener('input', inputHandler);
+            inputElement.addEventListener('focus', updateSuggestions);
+            inputElement.addEventListener('blur', blurHandler);
+            list.addEventListener('mousedown', mousedownHandler);
+            return () => { inputElement.removeEventListener('input', inputHandler); inputElement.removeEventListener('focus', updateSuggestions); inputElement.removeEventListener('blur', blurHandler); list.removeEventListener('mousedown', mousedownHandler); if (list) list.remove(); };
+        };
+
+        // --- FIREBASE FUNCTIONS ---
+        const getEmployeeCollection = () => collection(db, `/artifacts/${appId}/users/${userId}/employees`);
+        const getCompanyCollection = () => collection(db, `/artifacts/${appId}/users/${userId}/companies`);
+        const getTimesheetCollection = () => collection(db, `/artifacts/${appId}/users/${userId}/timesheets`);
+        const saveEmployee = async (id, name, salary, companyId, workload, paymentType) => await setDoc(doc(getEmployeeCollection(), id), { id, name, salary, companyId, workload, paymentType });
+        const saveCompany = async (id, codigo, nome, cnpj) => await setDoc(doc(getCompanyCollection(), id), { id, codigo, nome, cnpj });
+        const deleteEmployeeAndTimesheets = async (id) => {if (!id) return;await deleteDoc(doc(getEmployeeCollection(), id));const batch = writeBatch(db);Object.keys(state.timesheets).filter(key => key.startsWith(id + '_')).forEach(key => batch.delete(doc(getTimesheetCollection(), key)));await batch.commit();closeDeleteModal();};
+        const deleteCompanyAndUpdateEmployees = async (id) => {if (!id) return;const batch = writeBatch(db);state.employees.filter(emp => emp.companyId === id).forEach(emp => {const empRef = doc(getEmployeeCollection(), emp.id);batch.update(empRef, { companyId: "" });});batch.delete(doc(getCompanyCollection(), id));await batch.commit();closeDeleteModal();};
+        const saveTimesheetData = async (employeeId, month, year, data) => {if (!employeeId) return;const timesheetId = `${employeeId}_${year}-${String(month + 1).padStart(2, '0')}`;await setDoc(doc(getTimesheetCollection(), timesheetId), { data });};
+        
+        const detachListeners = () => {
+            if (unsubscribeCompanies) unsubscribeCompanies();
+            if (unsubscribeEmployees) unsubscribeEmployees();
+            if (unsubscribeTimesheets) unsubscribeTimesheets();
+        };
+
+        const setupListeners = () => {
+            detachListeners(); 
+            unsubscribeCompanies = onSnapshot(getCompanyCollection(), (snapshot) => { state.companies = snapshot.docs.map(doc => doc.data()).sort((a,b) => (a.codigo || "").localeCompare(b.codigo || "")); renderCompanyList(); renderEmployeeList(); renderReport(); });
+            unsubscribeEmployees = onSnapshot(getEmployeeCollection(), (snapshot) => { state.employees = snapshot.docs.map(doc => doc.data()).sort((a, b) => a.name.localeCompare(b.name)); renderEmployeeList(); renderReport(); });
+            unsubscribeTimesheets = onSnapshot(getTimesheetCollection(), (snapshot) => { state.timesheets = {}; snapshot.docs.forEach(doc => { state.timesheets[doc.id] = doc.data().data; }); renderReport(); if (document.getElementById('apontamentos-tab').classList.contains('active')) { renderTimesheet(); } });
+        };
+
+        // --- EVENT HANDLERS & MODAL LOGIC ---
+        const switchToTab = (tabId) => {document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');document.getElementById(`${tabId}-tab`).classList.remove('hidden');if (tabId === 'relatorio') renderReport();if (tabId === 'apontamentos') renderTimesheet();if (tabId === 'empresas') renderCompanyList();};
+        
+        const openEmployeeModal = (employee = null) => {
+            employeeForm.reset();
+            if (cleanupNameSuggestions) { cleanupNameSuggestions(); cleanupNameSuggestions = null; }
+            let initialData = { isEditing: false, employeeId: crypto.randomUUID(), name: '', salary: '', workload: '08:00', companyId: '', paymentType: 'monthly' };
+            if (employeeModalState) { const restoredState = { ...employeeModalState }; employeeModalState = null; initialData = { ...restoredState, companyId: restoredState.newCompanyId }; }
+            else if (employee) { initialData = { isEditing: true, employeeId: employee.id, name: employee.name, salary: employee.salary, workload: employee.workload || '08:00', companyId: employee.companyId, paymentType: employee.paymentType || 'monthly' }; }
+            modalTitle.textContent = initialData.isEditing ? 'Editar Funcionário' : 'Adicionar Funcionário';
+            document.getElementById('employee-id').value = initialData.employeeId;
+            const nameInput = document.getElementById('employee-name');
+            nameInput.value = initialData.name;
+            document.getElementById('employee-salary').value = initialData.salary;
+            document.getElementById('employee-workload').value = initialData.workload;
+            if (!initialData.isEditing) { cleanupNameSuggestions = addNameSuggestions(nameInput); }
+            const setPaymentTypeUI = (type) => { document.getElementById('employee-payment-type').value = type; document.querySelectorAll('.payment-type-btn').forEach(btn => { btn.classList.toggle('active', btn.dataset.type === type); }); const isHourly = type === 'hourly'; document.getElementById('workload-wrapper').style.display = isHourly ? 'none' : 'block'; document.getElementById('salary-label').textContent = isHourly ? 'Valor por Hora (R$)' : 'Salário (R$)'; document.getElementById('employee-workload').required = !isHourly; };
+            setPaymentTypeUI(initialData.paymentType);
+            const companyInput = createCompanySearchableDropdown(employeeCompanyContainer, "Pesquisar empresa...", true, (selection) => { if (selection.action === 'create') { employeeModalState = { name: nameInput.value, workload: document.getElementById('employee-workload').value, salary: document.getElementById('employee-salary').value, paymentType: document.getElementById('employee-payment-type').value, isEditing: initialData.isEditing, employeeId: initialData.employeeId }; closeEmployeeModal(); companyToCreateFromModal = selection.value; openCompanyModal(); } else { const company = state.companies.find(c => c.id === selection.id); if(company) { companyInput.value = company.nome; companyInput.dataset.selectedId = company.id; } } });
+            const initialCompany = state.companies.find(c => c.id === initialData.companyId);
+            if (initialCompany) { companyInput.value = initialCompany.nome; companyInput.dataset.selectedId = initialCompany.id; }
+            employeeModal.classList.remove('hidden'); employeeModal.classList.add('flex');
+        };
+
+        const closeEmployeeModal = () => { if (cleanupNameSuggestions) { cleanupNameSuggestions(); cleanupNameSuggestions = null; } employeeModal.classList.add('hidden'); };
+        const openCompanyModal = (company = null) => { companyForm.reset(); const nameInput = document.getElementById('company-name'), codeInput = document.getElementById('company-code'); if (company) { document.getElementById('company-modal-title').textContent = 'Editar Empresa'; document.getElementById('company-id').value = company.id; codeInput.value = company.codigo; nameInput.value = company.nome; document.getElementById('company-cnpj').value = company.cnpj || ''; } else { document.getElementById('company-modal-title').textContent = 'Adicionar Empresa'; document.getElementById('company-id').value = crypto.randomUUID(); if(companyToCreateFromModal){ if(/^\d+$/.test(companyToCreateFromModal)){ codeInput.value = companyToCreateFromModal; } else { nameInput.value = companyToCreateFromModal; } companyToCreateFromModal = null; } } companyModal.classList.remove('hidden'); companyModal.classList.add('flex'); };
+        const closeCompanyModal = () => companyModal.classList.add('hidden');
+        const openDeleteModal = (id, type) => {let text;if (type === 'employee') {const employee = state.employees.find(e => e.id === id);if (!employee) return;itemToDelete = { id, type, name: employee.name };text = `Tem certeza de que deseja excluir o funcionário <strong>${itemToDelete.name}</strong>? Todos os seus apontamentos também serão apagados. Esta ação não pode ser desfeita.`;} else if (type === 'company') {const company = state.companies.find(c => c.id === id);if (!company) return;itemToDelete = { id, type, name: company.nome };text = `Tem certeza de que deseja excluir a empresa <strong>${itemToDelete.name}</strong>? Os funcionários associados a ela não serão excluídos, mas ficarão sem empresa.`;}deleteConfirmText.innerHTML = text;deleteConfirmModal.classList.remove('hidden');deleteConfirmModal.classList.add('flex');};
+        const closeDeleteModal = () => {deleteConfirmModal.classList.add('hidden');itemToDelete = { id: null, type: null, name: '' };};
+
+        const handleEmployeeFormSubmit = async (e) => { e.preventDefault(); const id = document.getElementById('employee-id').value; const name = document.getElementById('employee-name').value; const salary = document.getElementById('employee-salary').value || "0"; const companyInput = employeeCompanyContainer.querySelector('input'); const companyId = companyInput.dataset.selectedId || ""; const workload = document.getElementById('employee-workload').value; const paymentType = document.getElementById('employee-payment-type').value; await saveEmployee(id, name, salary, companyId, workload, paymentType); closeEmployeeModal(); };
+        const handleCompanyFormSubmit = async (e) => { e.preventDefault(); const id = document.getElementById('company-id').value; const codigo = document.getElementById('company-code').value; const nome = document.getElementById('company-name').value; const cnpj = document.getElementById('company-cnpj').value; await saveCompany(id, codigo, nome, cnpj); closeCompanyModal(); if (employeeModalState) { employeeModalState.newCompanyId = id; setTimeout(() => openEmployeeModal(), 150); } };
+        const handleConfirmDelete = () => {if (itemToDelete.type === 'employee') deleteEmployeeAndTimesheets(itemToDelete.id);else if (itemToDelete.type === 'company') deleteCompanyAndUpdateEmployees(itemToDelete.id);};
+        const handleDateChange = () => {state.currentMonth = parseInt(monthSelect.value);state.currentYear = parseInt(yearSelect.value);renderTimesheet();renderReport();};
+        
+        const handlePdfExport = () => {
+            if (!state.currentEmployeeId) { alert("Por favor, selecione um funcionário para exportar."); return; }
+            const employee = state.employees.find(e => e.id === state.currentEmployeeId);
+            const company = state.companies.find(c => c.id === employee.companyId);
+            const timesheetId = `${state.currentEmployeeId}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
+            const timesheetData = state.timesheets[timesheetId] || {};
+            const monthName = monthSelect.options[monthSelect.selectedIndex].text;
+
+            const rowsHtml = Array.from({ length: new Date(state.currentYear, state.currentMonth + 1, 0).getDate() }, (_, i) => i + 1).map(day => {
+                const dayStr = String(day).padStart(2, '0');
+                const dayData = timesheetData[dayStr] || {};
+                const date = new Date(state.currentYear, state.currentMonth, day);
+                const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+                const { totalWorkedMinutes, balanceMinutes, overtime50Minutes, overtime100Minutes, nightlyMinutes } = calculateDayTotals(dayData, employee);
+                
+                const balanceDisplay = employee.paymentType === 'hourly' ? '---' : minutesToTime(balanceMinutes, true);
+                const statusDisplay = statusMap[dayData.status || 'workday'] || 'Trabalho';
+
+                return `
+                    <tr>
+                        <td>${dayStr}</td>
+                        <td>${dayOfWeek}</td>
+                        <td>${statusDisplay}</td>
+                        <td>${dayData.entry1 || '--:--'}</td><td>${dayData.exit1 || '--:--'}</td>
+                        <td>${dayData.entry2 || '--:--'}</td><td>${dayData.exit2 || '--:--'}</td>
+                        <td>${minutesToTime(totalWorkedMinutes)}</td>
+                        <td>${balanceDisplay}</td>
+                        <td>${dayData.manual_extra50 ? dayData.extra50 : minutesToTime(overtime50Minutes)}</td>
+                        <td>${dayData.manual_extra100 ? dayData.extra100 : minutesToTime(overtime100Minutes)}</td>
+                        <td>${dayData.manual_nightly ? dayData.nightly : minutesToTime(nightlyMinutes)}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            const monthTotals = calculateMonthTotals(employee);
+            const hourlyRate = (employee.paymentType === 'hourly') ? parseFloat(employee.salary || 0) : (parseFloat(employee.salary || 0) / 220);
+            const extra50Value = (monthTotals.extra50 / 60) * hourlyRate * 1.5;
+            const extra100Value = (monthTotals.extra100 / 60) * hourlyRate * 2.0;
+            const nightlyValue = (monthTotals.nightly / 60) * (hourlyRate * (parseFloat(document.getElementById('nightly-percentage').value) / 100));
+
+            const summaryHtml = `
+                <div class="summary-section">
+                    <h3>Resumo do Mês</h3>
+                    <div class="summary-grid">
+                        <span>Total Horas Trabalhadas:</span><strong>${minutesToTime(monthTotals.totalWorked)}</strong>
+                        ${employee.paymentType !== 'hourly' ? `<span>Saldo Banco de Horas:</span><strong>${minutesToTime(monthTotals.balance, true)}</strong>` : '<span></span><span></span>'}
+                        <span>Total H.E. 50%:</span><strong>${minutesToTime(monthTotals.extra50)} (${formatCurrency(extra50Value)})</strong>
+                        <span>Total H.E. 100%:</span><strong>${minutesToTime(monthTotals.extra100)} (${formatCurrency(extra100Value)})</strong>
+                        <span>Total Ad. Noturno:</span><strong>${minutesToTime(monthTotals.nightly)} (${formatCurrency(nightlyValue)})</strong>
+                        <span class="total">Valor Total de Variáveis:</span><strong class="total">${formatCurrency(extra50Value + extra100Value + nightlyValue)}</strong>
+                    </div>
+                </div>
+            `;
+
+            const printHtml = `
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Espelho de Ponto - ${employee.name}</title>
+                    <style>
+                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+                        @page { size: A4; margin: 1cm; }
+                        body { font-family: 'Inter', sans-serif; font-size: 9pt; color: #333; }
+                        .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; border-bottom: 2px solid #0056b3; margin-bottom: 15px; }
+                        .header-info { text-align: left; }
+                        .header-info h1 { font-size: 14pt; margin: 0; color: #0056b3; }
+                        .header-info p { margin: 2px 0; font-size: 10pt; }
+                        .header-period { text-align: right; }
+                        .header-period p { margin: 2px 0; font-size: 10pt; font-weight: 500;}
+                        table { width: 100%; border-collapse: collapse; }
+                        th, td { border: 1px solid #ccc; padding: 4px; text-align: center; }
+                        th { background-color: #f0f4f8; font-weight: 600; font-size: 8pt;}
+                        tr:nth-child(even) { background-color: #f9f9f9; }
+                        .summary-section { margin-top: 20px; page-break-inside: avoid; }
+                        .summary-section h3 { font-size: 12pt; color: #0056b3; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+                        .summary-grid { display: grid; grid-template-columns: auto auto; gap: 5px 15px; width: fit-content; }
+                        .summary-grid span { text-align: right; }
+                        .summary-grid .total { font-weight: bold; margin-top: 5px; padding-top: 5px; border-top: 1px solid #999;}
+                        .print-btn { display: block; margin: 20px auto; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+                        @media print { .print-btn { display: none; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div class="header-info">
+                             <h1>Espelho de Ponto</h1>
+                             <p><strong>Funcionário:</strong> ${employee.name}</p>
+                             <p><strong>Empresa:</strong> ${company ? company.nome : 'N/A'}</p>
+                        </div>
+                        <div class="header-period">
+                             <p><strong>Período de Apuração</strong></p>
+                             <p>${monthName} de ${state.currentYear}</p>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Dia</th><th>Semana</th><th>Status</th><th>Ent. 1</th><th>Saí. 1</th><th>Ent. 2</th><th>Saí. 2</th><th>Total Trab.</th><th>Saldo</th><th>H.E. 50%</th><th>H.E. 100%</th><th>Ad. Not.</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rowsHtml}</tbody>
+                    </table>
+                    ${summaryHtml}
+                    <button class="print-btn" onclick="window.print()">Imprimir</button>
+                </body>
+                </html>
+            `;
+            const win = window.open('', '_blank');
+            win.document.write(printHtml);
+            win.document.close();
+        };
+        
+        const handleCsvExport = () => {
+            if (!state.currentEmployeeId) { alert("Por favor, selecione um funcionário para exportar."); return; }
+            const employee = state.employees.find(e => e.id === state.currentEmployeeId);
+            const company = state.companies.find(c => c.id === employee.companyId);
+            const timesheetId = `${state.currentEmployeeId}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
+            const timesheetData = state.timesheets[timesheetId] || {};
+
+            const headers = ["Dia", "Dia da Semana", "Status", "Feriado", "Carga Dia", "Entrada 1", "Saida 1", "Entrada 2", "Saida 2", "Total Trabalhado", "Saldo", "H. Extra 50%", "H. Extra 100%", "Ad. Noturno"];
+            const rows = Object.keys(timesheetData).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).map(day => {
+                const dayData = timesheetData[day];
+                const date = new Date(state.currentYear, state.currentMonth, parseInt(day));
+                const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'long' });
+                const { totalWorkedMinutes, balanceMinutes, overtime50Minutes, overtime100Minutes, nightlyMinutes } = calculateDayTotals(dayData, employee);
+                const balanceDisplay = employee.paymentType === 'hourly' ? '' : minutesToTime(balanceMinutes, true);
+                const statusDisplay = statusMap[dayData.status || 'workday'] || 'Trabalho';
+
+                return [
+                    day, dayOfWeek, statusDisplay, dayData.is_holiday ? 'SIM' : 'NAO', dayData.daily_workload || employee.workload,
+                    dayData.entry1 || '', dayData.exit1 || '', dayData.entry2 || '', dayData.exit2 || '',
+                    minutesToTime(totalWorkedMinutes), balanceDisplay,
+                    dayData.manual_extra50 ? dayData.extra50 : minutesToTime(overtime50Minutes),
+                    dayData.manual_extra100 ? dayData.extra100 : minutesToTime(overtime100Minutes),
+                    dayData.manual_nightly ? dayData.nightly : minutesToTime(nightlyMinutes)
+                ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(',');
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            const monthStr = String(state.currentMonth + 1).padStart(2, '0');
+            const fileName = `Apontamentos_${employee.name.replace(/\s+/g, '_')}_${monthStr}-${state.currentYear}.csv`;
+            link.setAttribute("download", fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        const handleSaveTimesheet = async () => { if (!state.hasUnsavedChanges || !state.currentEmployeeId) return; updateSaveStatus(true); const timesheetId = `${state.currentEmployeeId}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`; const currentMonthTimesheet = state.timesheets[timesheetId] || {}; await saveTimesheetData(state.currentEmployeeId, state.currentMonth, state.currentYear, currentMonthTimesheet); state.hasUnsavedChanges = false; updateSaveStatus(false, true); };
+        const handleTimesheetInputChange = (e) => { const { day, field } = e.target.dataset; const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value; const currentEmployee = state.employees.find(emp => emp.id === state.currentEmployeeId); if (!currentEmployee) return; const timesheetId = `${state.currentEmployeeId}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`; if (!state.timesheets[timesheetId]) state.timesheets[timesheetId] = {}; const currentMonthTimesheet = state.timesheets[timesheetId]; if (!currentMonthTimesheet[day]) currentMonthTimesheet[day] = {}; const dayData = currentMonthTimesheet[day]; dayData[field] = value; const row = e.target.closest('tr'); const status = row.querySelector('.status-select').value; const isWorkday = !['absent', 'day_off', 'certificate'].includes(status); row.querySelectorAll('.time-input, .manual-input, .workload-input').forEach(input => input.disabled = !isWorkday); row.classList.toggle('bg-slate-100', !isWorkday); row.classList.toggle('text-slate-500', !isWorkday); if (!isWorkday) { row.querySelectorAll('.time-input').forEach(i => i.value = ''); Object.assign(dayData, { entry1: '', exit1: '', entry2: '', exit2: '' }); } const { totalWorkedMinutes, balanceMinutes, overtime50Minutes, overtime100Minutes, nightlyMinutes } = calculateDayTotals(dayData, currentEmployee); if (e.target.classList.contains('manual-input')) { dayData[`manual_${field}`] = true; } else if (['time-input', 'workload-input', 'status-select'].some(c => e.target.classList.contains(c)) || field === 'is_holiday') { delete dayData.manual_extra50; delete dayData.manual_extra100; delete dayData.manual_nightly; } dayData.extra50 = dayData.manual_extra50 ? dayData.extra50 : minutesToTime(overtime50Minutes); dayData.extra100 = dayData.manual_extra100 ? dayData.extra100 : minutesToTime(overtime100Minutes); dayData.nightly = dayData.manual_nightly ? dayData.nightly : minutesToTime(nightlyMinutes); row.querySelector('[data-field="extra50"]').value = dayData.extra50; row.querySelector('[data-field="extra100"]').value = dayData.extra100; row.querySelector('[data-field="nightly"]').value = dayData.nightly; row.querySelector('td:nth-child(9)').textContent = minutesToTime(totalWorkedMinutes); const balanceCell = row.querySelector('td:nth-child(10)'); balanceCell.textContent = currentEmployee.paymentType === 'hourly' ? 'N/A' : minutesToTime(balanceMinutes, true); balanceCell.className = `p-2 text-center font-semibold ${balanceMinutes < 0 ? 'text-red-500' : 'text-green-600'}`; if (!state.hasUnsavedChanges) { state.hasUnsavedChanges = true; updateSaveStatus(); } };
+        const handleTimesheetNavigation = (e) => { const target = e.target; if (!target.matches('.time-input, .workload-input, .manual-input, .status-select, [data-field="is_holiday"]')) return; const key = e.key; if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) return; e.preventDefault(); const currentTr = target.closest('tr'); const currentTd = target.closest('td'); if (!currentTr || !currentTd) return; const allRows = Array.from(timesheetBody.rows); const rowIndex = allRows.indexOf(currentTr); const cellIndex = Array.from(currentTr.cells).indexOf(currentTd); let nextFocusable = null; if (key === 'ArrowUp' && rowIndex > 0) { nextFocusable = allRows[rowIndex - 1].cells[cellIndex]?.querySelector('input:not([disabled]), select:not([disabled])'); } else if (key === 'ArrowDown' && rowIndex < allRows.length - 1) { nextFocusable = allRows[rowIndex + 1].cells[cellIndex]?.querySelector('input:not([disabled]), select:not([disabled])'); } else if (key === 'ArrowLeft') { let prevTd = currentTd.previousElementSibling; while (prevTd && !nextFocusable) { nextFocusable = prevTd.querySelector('input:not([disabled]), select:not([disabled])'); prevTd = prevTd.previousElementSibling; } } else if (key === 'ArrowRight') { let nextTd = currentTd.nextElementSibling; while (nextTd && !nextFocusable) { nextFocusable = nextTd.querySelector('input:not([disabled]), select:not([disabled])'); nextTd = nextTd.nextElementSibling; } } if (nextFocusable) { nextFocusable.focus(); if (typeof nextFocusable.select === 'function') nextFocusable.select(); } };
+
+        // --- INICIALIZAÇÃO ---
+        const init = () => {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            onAuthStateChanged(auth, (user) => {
+                loadingEl.style.display = 'none';
+                clearUI();
+                
+                if (user) {
+                    userId = user.uid;
+                    mainContentEl.classList.remove('hidden');
+
+                    if(user.isAnonymous){
+                        loginBtn.classList.remove('hidden');
+                        userInfoEl.classList.add('hidden');
+                    } else {
+                        loginBtn.classList.add('hidden');
+                        userInfoEl.classList.remove('hidden');
+                        userEmailEl.textContent = user.email;
+                    }
+
+                    if (!appComponentsInitialized) { 
+                        initializeAppComponents(); 
+                    }
+                    setupListeners();
+
+                } else {
+                    signInAnonymously(auth).catch(err => console.error("Anonymous sign-in failed:", err));
+                }
+            });
+        };
+        
+        const clearUI = () => {
+             state = { employees: [], companies: [], timesheets: {}, currentEmployeeId: null, apontamentoCompanyId: null, reportCompanyFilter: '', currentMonth: new Date().getMonth(), currentYear: new Date().getFullYear(), searchTerm: '', companyFilter: '', hasUnsavedChanges: false };
+             employeeList.innerHTML = '';
+             companyListBody.innerHTML = '';
+             timesheetBody.innerHTML = '';
+             reportBody.innerHTML = '';
+             detachListeners();
+        };
+
+        const initializeAppComponents = () => {
+            appComponentsInitialized = true;
+            apontamentoCompanyInput = createCompanySearchableDropdown(apontamentoCompanyContainer, "Pesquisar empresa...", false, (selection) => { if (selection.action === 'select') { state.apontamentoCompanyId = selection.id; state.currentEmployeeId = null; if(apontamentoEmployeeInput) { apontamentoEmployeeInput.value = ''; apontamentoEmployeeInput.dataset.selectedId = ''; apontamentoEmployeeInput.disabled = !selection.id; apontamentoEmployeeInput.placeholder = selection.id ? "Pesquisar funcionário..." : "Selecione uma empresa"; } renderTimesheet(); const company = state.companies.find(c=>c.id === selection.id); if(company) {apontamentoCompanyInput.value = company.nome;} else {apontamentoCompanyInput.value = "Todas as Empresas"} } });
+            apontamentoEmployeeInput = createEmployeeSearchableDropdown(apontamentoEmployeeContainer, "Selecione uma empresa", () => state.apontamentoCompanyId ? state.employees.filter(e => e.companyId === state.apontamentoCompanyId) : [], (selection) => { if (selection.action === 'select') { state.currentEmployeeId = selection.id; renderTimesheet(); const employee = state.employees.find(emp=>emp.id === selection.id); if(employee){apontamentoEmployeeInput.value = employee.name; apontamentoEmployeeInput.dataset.selectedId = employee.id;} } });
+            apontamentoEmployeeInput.disabled = true;
+
+            createCompanySearchableDropdown(filterCompanyContainer, "Filtrar por empresa...", false, (selection) => { if (selection.action === 'select') { state.companyFilter = selection.id; renderEmployeeList(); const input = filterCompanyContainer.querySelector('input'); const company = state.companies.find(c => c.id === selection.id); input.value = company ? company.nome : 'Todas as Empresas'; } });
+            createCompanySearchableDropdown(reportCompanyContainer, "Filtrar por empresa...", false, (selection) => { if (selection.action === 'select') { state.reportCompanyFilter = selection.id; renderReport(); const input = reportCompanyContainer.querySelector('input'); const company = state.companies.find(c => c.id === selection.id); input.value = company ? company.nome : 'Todas as Empresas'; } });
+
+            populateDateSelectors();
+
+            document.querySelector('[aria-label="Tabs"]').addEventListener('click', (e) => e.target.classList.contains('tab-button') && switchToTab(e.target.dataset.tab));
+            addEmployeeBtn.addEventListener('click', () => openEmployeeModal());
+            addCompanyBtn.addEventListener('click', () => openCompanyModal());
+            cancelBtn.addEventListener('click', closeEmployeeModal);
+            cancelCompanyBtn.addEventListener('click', closeCompanyModal);
+            employeeModal.addEventListener('click', (e) => { if (e.target.classList.contains('payment-type-btn')) { const type = e.target.dataset.type; document.getElementById('employee-payment-type').value = type; document.querySelectorAll('.payment-type-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.type === type)); const isHourly = type === 'hourly'; document.getElementById('workload-wrapper').style.display = isHourly ? 'none' : 'block'; document.getElementById('salary-label').textContent = isHourly ? 'Valor por Hora (R$)' : 'Salário (R$)'; document.getElementById('employee-workload').required = !isHourly; } else if (e.target === employeeModal) { closeEmployeeModal(); } });
+            companyModal.addEventListener('click', (e) => e.target === companyModal && closeCompanyModal());
+            employeeForm.addEventListener('submit', handleEmployeeFormSubmit);
+            companyForm.addEventListener('submit', handleCompanyFormSubmit);
+            cancelDeleteBtn.addEventListener('click', closeDeleteModal);
+            deleteConfirmModal.addEventListener('click', (e) => e.target === deleteConfirmModal && closeDeleteModal());
+            confirmDeleteBtn.addEventListener('click', handleConfirmDelete);
+            monthSelect.addEventListener('change', handleDateChange);
+            yearSelect.addEventListener('change', handleDateChange);
+            searchEmployeeInput.addEventListener('input', e => { state.searchTerm = e.target.value; renderEmployeeList(); });
+            exportPdfBtn.addEventListener('click', handlePdfExport);
+            exportCsvBtn.addEventListener('click', handleCsvExport);
+            saveTimesheetBtn.addEventListener('click', handleSaveTimesheet);
+            employeeList.addEventListener('click', (e) => { const row = e.target.closest('tr'); if (!row) return; const id = row.dataset.id; if (e.target.classList.contains('edit-btn')) openEmployeeModal(state.employees.find(emp => emp.id === id)); else if (e.target.classList.contains('delete-btn')) openDeleteModal(id, 'employee'); else if (e.target.classList.contains('go-to-timesheet-btn')) { const employee = state.employees.find(emp => emp.id === id); if(employee){ const company = state.companies.find(c => c.id === employee.companyId); state.apontamentoCompanyId = employee.companyId; state.currentEmployeeId = id; if (apontamentoCompanyInput && company) { apontamentoCompanyInput.value = company.nome; apontamentoCompanyInput.dataset.selectedId = company.id; } else { apontamentoCompanyInput.value = ''; } if (apontamentoEmployeeInput) { apontamentoEmployeeInput.value = employee.name; apontamentoEmployeeInput.dataset.selectedId = id; apontamentoEmployeeInput.disabled = false; } switchToTab('apontamentos'); } } });
+            companyListBody.addEventListener('click', (e) => { const row = e.target.closest('tr'); if (!row) return; const id = row.dataset.id; if (e.target.classList.contains('edit-company-btn')) openCompanyModal(state.companies.find(c => c.id === id)); else if (e.target.classList.contains('delete-company-btn')) openDeleteModal(id, 'company'); });
+            timesheetBody.addEventListener('change', handleTimesheetInputChange);
+            timesheetBody.addEventListener('keydown', handleTimesheetNavigation);
+            timesheetBody.addEventListener('input', e => { if (e.target.matches('.time-input, .workload-input, .manual-input')) { const input = e.target; let value = input.value.replace(/\D/g, ''); input.value = value.length > 2 ? value.slice(0, 2) + ':' + value.slice(2, 4) : value; } });
+            timesheetBody.addEventListener('blur', e => { if (e.target.matches('.time-input, .workload-input, .manual-input')) { const input = e.target; if (input.value.length > 0 && !/^\d{2}:\d{2}$/.test(input.value)) input.value = ''; else if (input.value) { const [hours, minutes] = input.value.split(':').map(Number); if (hours > 23 || minutes > 59) input.value = ''; } } }, true);
+            employeeForm.addEventListener('input', e => { if (e.target.id === 'employee-workload') { const input = e.target; let value = input.value.replace(/\D/g, ''); input.value = value.length > 2 ? value.slice(0, 2) + ':' + value.slice(2, 4) : value; } });
+            employeeForm.addEventListener('blur', e => { if (e.target.id === 'employee-workload') { const input = e.target; if (input.value.length > 0 && !/^\d{2}:\d{2}$/.test(input.value)) input.value = '08:00'; else if (input.value) { const [hours, minutes] = input.value.split(':').map(Number); if (hours > 23 || minutes > 59) input.value = '08:00'; } } }, true);
+        };
+        
+        // Auth event listeners
+        loginBtn.addEventListener('click', () => { authModal.classList.remove('hidden'); authModal.classList.add('flex'); });
+        closeAuthModalBtn.addEventListener('click', () => { authModal.classList.add('hidden'); authModal.classList.remove('flex'); });
+        authModal.addEventListener('click', (e) => { if(e.target === authModal) { authModal.classList.add('hidden'); authModal.classList.remove('flex'); } });
+        showRegisterViewBtn.addEventListener('click', (e) => { e.preventDefault(); loginView.classList.add('hidden'); registerView.classList.remove('hidden'); });
+        showLoginViewBtn.addEventListener('click', (e) => { e.preventDefault(); registerView.classList.add('hidden'); loginView.classList.remove('hidden'); });
+        logoutBtn.addEventListener('click', () => { signOut(auth); });
+        loginForm.addEventListener('submit', async (e) => { e.preventDefault(); loginErrorEl.textContent = ''; const email = document.getElementById('login-email').value; const password = document.getElementById('login-password').value; try { await signInWithEmailAndPassword(auth, email, password); authModal.classList.add('hidden'); authModal.classList.remove('flex'); } catch (error) { loginErrorEl.textContent = 'Email ou senha inválidos.'; } });
+        registerForm.addEventListener('submit', async (e) => { e.preventDefault(); registerErrorEl.textContent = ''; const email = document.getElementById('register-email').value; const password = document.getElementById('register-password').value; try { await createUserWithEmailAndPassword(auth, email, password); authModal.classList.add('hidden'); authModal.classList.remove('flex'); } catch (error) { if (error.code === 'auth/email-already-in-use') { registerErrorEl.textContent = 'Este email já está em uso.'; } else if (error.code === 'auth/weak-password') { registerErrorEl.textContent = 'A senha deve ter no mínimo 6 caracteres.'; } else { registerErrorEl.textContent = 'Ocorreu um erro ao criar a conta.'; } } });
+        
+        init();
+    </script>
+</body>
+</html>
