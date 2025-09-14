@@ -743,11 +743,6 @@
         };
 
         const switchToTab = (tabId) => {
-            if(state.hasUnsavedChanges) {
-                if(!confirm("Você tem alterações não salvas que serão perdidas. Deseja continuar?")) {
-                    return;
-                }
-            }
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');document.getElementById(`${tabId}-tab`).classList.remove('hidden');if (tabId === 'relatorio') renderReport();if (tabId === 'apontamentos') renderTimesheet();if (tabId === 'empresas') renderCompanyList();
         };
         
@@ -913,27 +908,56 @@
             const company = state.companies.find(c => c.id === employee.companyId);
             const timesheetId = `${state.currentEmployeeId}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
             const timesheetData = state.timesheets[timesheetId] || {};
+            const monthName = monthSelect.options[monthSelect.selectedIndex].text;
+
+            let csvRows = [];
+            csvRows.push(['Espelho de Ponto']);
+            csvRows.push([`"Funcionário:"`, `"${employee.name}"`]);
+            csvRows.push([`"Empresa:"`, `"${company ? company.nome : 'N/A'}"`]);
+            csvRows.push([`"Período:"`, `"${monthName} de ${state.currentYear}"`]);
+            csvRows.push([]); 
 
             const headers = ["Dia", "Dia da Semana", "Status", "Feriado", "Carga Dia", "Entrada 1", "Saida 1", "Entrada 2", "Saida 2", "Total Trabalhado", "Saldo", "H. Extra 50%", "H. Extra 100%", "Ad. Noturno"];
-            const rows = Object.keys(timesheetData).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).map(day => {
-                const dayData = timesheetData[day];
-                const date = new Date(state.currentYear, state.currentMonth, parseInt(day));
+            csvRows.push(headers);
+
+            Array.from({ length: new Date(state.currentYear, state.currentMonth + 1, 0).getDate() }, (_, i) => i + 1).forEach(day => {
+                const dayStr = String(day).padStart(2, '0');
+                const dayData = timesheetData[dayStr] || {};
+                const date = new Date(state.currentYear, state.currentMonth, day);
                 const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'long' });
                 const { totalWorkedMinutes, balanceMinutes, overtime50Minutes, overtime100Minutes, nightlyMinutes } = calculateDayTotals(dayData, employee);
                 const balanceDisplay = employee.paymentType === 'hourly' ? '' : minutesToTime(balanceMinutes, true);
                 const statusDisplay = statusMap[dayData.status || 'workday'] || 'Trabalho';
 
-                return [
-                    day, dayOfWeek, statusDisplay, dayData.is_holiday ? 'SIM' : 'NAO', dayData.daily_workload || employee.workload,
+                csvRows.push([
+                    dayStr, dayOfWeek, statusDisplay, dayData.is_holiday ? 'SIM' : 'NAO', dayData.daily_workload || employee.workload,
                     dayData.entry1 || '', dayData.exit1 || '', dayData.entry2 || '', dayData.exit2 || '',
                     minutesToTime(totalWorkedMinutes), balanceDisplay,
                     dayData.manual_extra50 ? dayData.extra50 : minutesToTime(overtime50Minutes),
                     dayData.manual_extra100 ? dayData.extra100 : minutesToTime(overtime100Minutes),
                     dayData.manual_nightly ? dayData.nightly : minutesToTime(nightlyMinutes)
-                ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(',');
+                ]);
             });
+            
+            csvRows.push([]);
+            csvRows.push(['Resumo do Mês']);
+            const monthTotals = calculateMonthTotals(employee);
+            const hourlyRate = (employee.paymentType === 'hourly') ? parseFloat(employee.salary || 0) : (parseFloat(employee.salary || 0) / 220);
+            const extra50Value = (monthTotals.extra50 / 60) * hourlyRate * 1.5;
+            const extra100Value = (monthTotals.extra100 / 60) * hourlyRate * 2.0;
+            const nightlyValue = (monthTotals.nightlyRaw / 60) * hourlyRate * (parseFloat(document.getElementById('nightly-percentage').value) / 100);
 
-            const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows].join('\n');
+            csvRows.push([`"Total Horas Trabalhadas:"`, `"${minutesToTime(monthTotals.totalWorked)}"`]);
+            if(employee.paymentType !== 'hourly') {
+                csvRows.push([`"Saldo Banco de Horas:"`, `"${minutesToTime(monthTotals.balance, true)}"`]);
+            }
+            csvRows.push([`"Total H.E. 50%:"`, `"${minutesToTime(monthTotals.extra50)} (${formatCurrency(extra50Value)})"`]);
+            csvRows.push([`"Total H.E. 100%:"`, `"${minutesToTime(monthTotals.extra100)} (${formatCurrency(extra100Value)})"`]);
+            csvRows.push([`"Total Ad. Noturno:"`, `"${minutesToTime(monthTotals.nightly)} (${formatCurrency(nightlyValue)})"`]);
+            csvRows.push([`"Valor Total de Variáveis:"`, `"${formatCurrency(extra50Value + extra100Value + nightlyValue)}"`]);
+
+
+            const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
             const link = document.createElement("a");
             link.setAttribute("href", encodeURI(csvContent));
             const monthStr = String(state.currentMonth + 1).padStart(2, '0');
@@ -1089,7 +1113,11 @@
                 authModal.classList.remove('flex'); 
             } catch (error) { 
                 console.error("Login error:", error.code, error.message);
-                loginErrorEl.textContent = 'Email ou senha inválidos.'; 
+                if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                    loginErrorEl.textContent = 'Credenciais inválidas. Verifique os dados.';
+                } else {
+                    loginErrorEl.textContent = 'Ocorreu um erro ao tentar entrar.';
+                }
             } 
         });
         registerForm.addEventListener('submit', async (e) => { 
@@ -1103,8 +1131,9 @@
                 authModal.classList.remove('flex'); 
             } catch (error) { 
                 console.error("Register error:", error.code, error.message);
-                if (error.code === 'auth/email-already-in-use') { registerErrorEl.textContent = 'Este email já está em uso.'; } 
-                else if (error.code === 'auth/weak-password') { registerErrorEl.textContent = 'A senha deve ter no mínimo 6 caracteres.'; } 
+                if (error.code === 'auth/email-already-in-use') { registerErrorEl.textContent = 'Este e-mail já está em uso.'; } 
+                else if (error.code === 'auth/weak-password') { registerErrorEl.textContent = 'A palavra-passe deve ter no mínimo 6 caracteres.'; } 
+                else if (error.code === 'auth/invalid-email') { registerErrorEl.textContent = 'O formato do e-mail é inválido.'; }
                 else { registerErrorEl.textContent = 'Ocorreu um erro ao criar a conta.'; } 
             } 
         });
@@ -1113,3 +1142,4 @@
     </script>
 </body>
 </html>
+
