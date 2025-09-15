@@ -21,15 +21,15 @@
             height: 8px;
         }
         ::-webkit-scrollbar-track {
-            background: #f1f5f9;
+            background: #e2e8f0;
             border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb {
-            background: #94a3b8;
+            background: #64748b;
             border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #475569;
+            background: #334155;
         }
         /* Styles for custom searchable dropdown */
         .searchable-dropdown {
@@ -132,10 +132,10 @@
             <header class="mb-8 flex justify-between items-start">
                 <div>
                     <h1 class="text-3xl font-bold text-slate-900">Apontamento de Horas Web</h1>
-                    <p class="text-slate-500 mt-1">Gerencie as horas de trabalho da sua equipe de forma simples e eficiente.</p>
+                    <p class="text-slate-600 mt-1">Gerencie as horas de trabalho da sua equipe de forma simples e eficiente.</p>
                 </div>
                 <div class="text-right">
-                    <button id="login-btn" class="hidden bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg shadow-sm hover:bg-slate-100 transition">Fazer Login / Cadastrar</button>
+                    <button id="login-btn" class="hidden bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg shadow-sm hover:bg-slate-200 transition">Fazer Login / Cadastrar</button>
                     <div id="user-info" class="hidden">
                         <p id="user-email" class="text-sm text-slate-600 font-medium"></p>
                         <button id="logout-btn" class="text-sm text-blue-600 hover:underline">Sair</button>
@@ -181,12 +181,12 @@
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left">
-                                <thead class="bg-slate-100 text-slate-600 uppercase tracking-wider">
+                                <thead class="bg-slate-200 text-slate-700 uppercase tracking-wider">
                                     <tr>
                                         <th class="p-4">Nome</th>
                                         <th class="p-4">Empresa</th>
                                         <th class="p-4">Carga Horária</th>
-                                        <th class="p-4">Salário / Hora (R$)</th>
+                                        <th class="p-4">Remuneração (R$)</th>
                                         <th class="p-4">Ações</th>
                                     </tr>
                                 </thead>
@@ -205,7 +205,7 @@
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left">
-                                <thead class="bg-slate-100 text-slate-600 uppercase tracking-wider">
+                                <thead class="bg-slate-200 text-slate-700 uppercase tracking-wider">
                                     <tr>
                                         <th class="p-4">Código</th>
                                         <th class="p-4">Nome</th>
@@ -242,7 +242,7 @@
                     <div id="timesheet-container" class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left">
-                                <thead class="bg-slate-100 text-slate-600 uppercase tracking-wider">
+                                <thead class="bg-slate-200 text-slate-700 uppercase tracking-wider">
                                     <tr>
                                         <th class="p-3 text-center">Dia</th>
                                         <th class="p-3">Carga Dia</th>
@@ -263,6 +263,8 @@
                             </table>
                         </div>
                     </div>
+                    <!-- Monthly Summary -->
+                    <div id="timesheet-summary" class="mt-6"></div>
                 </div>
 
                 <!-- Relatorio Tab -->
@@ -274,7 +276,7 @@
                      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left">
-                                <thead class="bg-slate-100 text-slate-600 uppercase tracking-wider">
+                                <thead class="bg-slate-200 text-slate-700 uppercase tracking-wider">
                                     <tr>
                                         <th class="p-4">Nome</th>
                                         <th class="p-4 text-center">Total Trab.</th>
@@ -403,20 +405,21 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, signInAnonymously, setPersistence, browserSessionPersistence, indexedDBLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, signInAnonymously, setPersistence, browserSessionPersistence, indexedDBLocalPersistence, EmailAuthProvider, linkWithCredential } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, collection, setDoc, deleteDoc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- CONFIGURAÇÃO DO FIREBASE ---
         const firebaseConfig = {
-  	apiKey: "AIzaSyDO_iyeQq4SroI_OEZWq8YQqU7en-0beZ8",
-  	authDomain: "apontamentos-sec.firebaseapp.com",
-  	projectId: "apontamentos-sec",
-  	storageBucket: "apontamentos-sec.firebasestorage.app",
-  	messagingSenderId: "193014581798",
-  	appId: "1:193014581798:web:ef8bc022d7476768ef74e7",
-  	measurementId: "G-XJ2J5X4MPK"
-	};
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'apontamentos-sec';
+      apiKey: "AIzaSyDO_iyeQq4SroI_OEZWq8YQqU7en-0beZ8",
+      authDomain: "apontamentos-sec.firebaseapp.com",
+      projectId: "apontamentos-sec",
+      storageBucket: "apontamentos-sec.firebasestorage.app",
+      messagingSenderId: "193014581798",
+      appId: "1:193014581798:web:ef8bc022d7476768ef74e7",
+      measurementId: "G-XJ2J5X4MPK"
+    };
+        // AJUSTE 3: Simplificação da variável appId
+        const appId = 'apontamentos-sec';
         let db, auth, userId;
         let unsubscribeCompanies, unsubscribeEmployees, unsubscribeTimesheets;
 
@@ -447,6 +450,7 @@
         const monthSelect = document.getElementById('month-select');
         const yearSelect = document.getElementById('year-select');
         const timesheetBody = document.getElementById('timesheet-body');
+        const timesheetSummaryEl = document.getElementById('timesheet-summary');
         const reportBody = document.getElementById('report-body');
         const searchEmployeeInput = document.getElementById('search-employee');
         const filterCompanyContainer = document.getElementById('filter-company-container');
@@ -573,7 +577,11 @@
 
         const renderTimesheet = () => {
             const currentEmployee = state.employees.find(e => e.id === state.currentEmployeeId);
-            if (!currentEmployee) { timesheetBody.innerHTML = `<tr><td colspan="13" class="p-4 text-center text-slate-500">Selecione uma empresa e um funcionário para ver os apontamentos.</td></tr>`; return; }
+            if (!currentEmployee) {
+                timesheetBody.innerHTML = `<tr><td colspan="13" class="p-4 text-center text-slate-500">Selecione uma empresa e um funcionário para ver os apontamentos.</td></tr>`;
+                timesheetSummaryEl.innerHTML = ''; // Limpa o resumo
+                return;
+            }
             const timesheetId = `${state.currentEmployeeId}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
             state.localTimesheet = JSON.parse(JSON.stringify(state.timesheets[timesheetId] || {}));
             state.hasUnsavedChanges = false;
@@ -585,6 +593,12 @@
                 const dayStr = day.toString().padStart(2, '0');
                 const date = new Date(state.currentYear, state.currentMonth, day);
                 const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'short' }).slice(0, 3);
+                // IMPLEMENTAÇÃO 1 e 2: Adiciona classe para fim de semana (número e texto)
+                const dayIndex = date.getDay();
+                const isWeekend = dayIndex === 0 || dayIndex === 6;
+                const weekendDayClass = isWeekend ? 'text-red-600 font-semibold' : '';
+                const weekendTextClass = isWeekend ? 'text-red-600' : 'text-slate-500';
+
                 const dayData = state.localTimesheet[dayStr] || {};
                 const { totalWorkedMinutes, balanceMinutes, overtime50Minutes, overtime100Minutes, nightlyMinutes } = calculateDayTotals(dayData, currentEmployee);
                 const status = dayData.status || 'workday';
@@ -595,8 +609,8 @@
                 const extra50 = dayData.manual_extra50 ? dayData.extra50 : minutesToTime(overtime50Minutes);
                 const extra100 = dayData.manual_extra100 ? dayData.extra100 : minutesToTime(overtime100Minutes);
                 const nightly = dayData.manual_nightly ? dayData.nightly : minutesToTime(nightlyMinutes);
-                return `<tr class="hover:bg-slate-50 ${!isWorkday ? 'bg-slate-100 text-slate-500' : ''}">
-                    <td class="p-2 text-center font-medium"><div class="flex items-center justify-center space-x-2"><span>${dayStr}</span><span class="text-xs text-slate-400">${dayOfWeek}</span></div></td>
+                return `<tr class="hover:bg-slate-50 ${!isWorkday ? 'bg-slate-200 text-slate-600' : ''}">
+                    <td class="p-2 text-center font-medium"><div class="flex items-center justify-center space-x-2 ${weekendDayClass}"><span>${dayStr}</span><span class="text-xs ${weekendTextClass}">${dayOfWeek}</span></div></td>
                     <td><input type="text" placeholder="HH:MM" class="workload-input w-24 p-1.5 border border-transparent hover:border-slate-300 focus:border-blue-500 bg-transparent rounded-md" data-day="${dayStr}" data-field="daily_workload" value="${workloadDisplay}" ${!isWorkday || currentEmployee.paymentType === 'hourly' ? 'disabled' : ''}></td>
                     <td><select class="status-select w-full p-1.5 border border-transparent hover:border-slate-300 bg-transparent rounded-md text-sm" data-day="${dayStr}" data-field="status"><option value="workday" ${status === 'workday' ? 'selected' : ''}>Trabalho</option><option value="absent" ${status === 'absent' ? 'selected' : ''}>Falta</option><option value="day_off" ${status === 'day_off' ? 'selected' : ''}>Folga</option><option value="certificate" ${status === 'certificate' ? 'selected' : ''}>Atestado</option></select></td>
                     ${['entry1', 'exit1', 'entry2', 'exit2'].map(field => `<td><input type="text" placeholder="HH:MM" class="time-input w-24 p-1.5 border border-transparent hover:border-slate-300 focus:border-blue-500 bg-transparent rounded-md" data-day="${dayStr}" data-field="${field}" value="${dayData[field] || ''}" ${!isWorkday ? 'disabled' : ''}></td>`).join('')}
@@ -608,13 +622,13 @@
                     <td><input type="text" placeholder="HH:MM" class="manual-input w-24 p-1.5 border border-transparent hover:border-slate-300 focus:border-blue-500 bg-transparent rounded-md" data-day="${dayStr}" data-field="nightly" value="${nightly}" ${!isWorkday ? 'disabled' : ''}></td>
                 </tr>`;
             }).join('');
+            renderTimesheetSummary(); // Renderiza o resumo inicial
         };
 
-        const calculateMonthTotals = (employee) => {
-            const timesheetId = `${employee.id}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
-            const timesheetData = state.timesheets[timesheetId] || {};
+        const calculateMonthTotals = (employee, timesheetData) => {
+            const dataToCalculate = timesheetData || state.timesheets[`${employee.id}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`] || {};
             const totals = { totalWorked: 0, balance: 0, extra50: 0, extra100: 0, nightly: 0, nightlyRaw: 0 };
-            Object.values(timesheetData).forEach(dayData => {
+            Object.values(dataToCalculate).forEach(dayData => {
                 const dayTotals = calculateDayTotals(dayData, employee);
                 totals.totalWorked += dayTotals.totalWorkedMinutes;
                 totals.balance += dayTotals.balanceMinutes;
@@ -626,11 +640,52 @@
             return totals;
         };
 
+        // SUGESTÃO 3: Função para renderizar o resumo mensal
+        const renderTimesheetSummary = () => {
+            const employee = state.employees.find(e => e.id === state.currentEmployeeId);
+            if (!employee) {
+                timesheetSummaryEl.innerHTML = '';
+                return;
+            }
+
+            const monthTotals = calculateMonthTotals(employee, state.localTimesheet);
+            const balanceDisplay = employee.paymentType === 'hourly' ? 'N/A' : minutesToTime(monthTotals.balance, true);
+            const balanceClass = monthTotals.balance < 0 ? 'text-red-500' : 'text-green-600';
+
+            timesheetSummaryEl.innerHTML = `
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-xl font-semibold mb-4 text-slate-800">Resumo do Mês (em tempo real)</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-4">
+                        <div class="p-4 bg-slate-50 rounded-lg">
+                            <p class="text-sm font-medium text-slate-600">Total Trabalhado</p>
+                            <p class="text-2xl font-bold text-slate-800">${minutesToTime(monthTotals.totalWorked)}</p>
+                        </div>
+                        <div class="p-4 bg-slate-50 rounded-lg">
+                            <p class="text-sm font-medium text-slate-600">Saldo (Banco)</p>
+                            <p class="text-2xl font-bold ${balanceClass}">${balanceDisplay}</p>
+                        </div>
+                        <div class="p-4 bg-slate-50 rounded-lg">
+                            <p class="text-sm font-medium text-slate-600">H.E. 50%</p>
+                            <p class="text-2xl font-bold text-slate-800">${minutesToTime(monthTotals.extra50)}</p>
+                        </div>
+                        <div class="p-4 bg-slate-50 rounded-lg">
+                            <p class="text-sm font-medium text-slate-600">H.E. 100%</p>
+                            <p class="text-2xl font-bold text-slate-800">${minutesToTime(monthTotals.extra100)}</p>
+                        </div>
+                        <div class="p-4 bg-slate-50 rounded-lg">
+                            <p class="text-sm font-medium text-slate-600">Adic. Noturno</p>
+                            <p class="text-2xl font-bold text-slate-800">${minutesToTime(monthTotals.nightly)}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
         const renderReport = () => {
             const nightlyPercentage = parseFloat(document.getElementById('nightly-percentage').value) / 100 || 0.2;
             const employeesToReport = state.reportCompanyFilter ? state.employees.filter(emp => emp.companyId === state.reportCompanyFilter) : state.employees;
             reportBody.innerHTML = employeesToReport.map(emp => {
-                const monthTotals = calculateMonthTotals(emp);
+                const monthTotals = calculateMonthTotals(emp); // Utiliza a versão com dados salvos
                 const hourlyRate = (emp.paymentType === 'hourly') ? parseFloat(emp.salary || 0) : (parseFloat(emp.salary || 0) / 220);
                 let totalVariablesDisplay = '-', extra50Display, extra100Display, nightlyDisplay;
                 if (emp.paymentType === 'hourly') {
@@ -651,7 +706,7 @@
                     nightlyDisplay = hourlyRate > 0 ? formatCurrency(nightlyValue) : minutesToTime(monthTotals.nightly);
                 }
                 const balanceDisplay = emp.paymentType === 'hourly' ? 'N/A' : minutesToTime(monthTotals.balance, true);
-                const balanceClass = monthTotals.balance < 0 ? 'text-red-500' : 'text-green-600';
+                const balanceClass = monthTotals.balance < 0 ? 'text-red-500' : 'text-green-500';
                 return `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${emp.name}</td><td class="p-4 text-center font-semibold">${minutesToTime(monthTotals.totalWorked)}</td><td class="p-4 text-center font-semibold ${balanceClass}">${balanceDisplay}</td><td class="p-4 text-right">${extra50Display}</td><td class="p-4 text-right">${extra100Display}</td><td class="p-4 text-right">${nightlyDisplay}</td><td class="p-4 text-right font-bold text-blue-700">${totalVariablesDisplay}</td></tr>`;
             }).join('');
         };
@@ -759,7 +814,19 @@
             document.getElementById('employee-salary').value = initialData.salary;
             document.getElementById('employee-workload').value = initialData.workload;
             if (!initialData.isEditing) { cleanupNameSuggestions = addNameSuggestions(nameInput); }
-            const setPaymentTypeUI = (type) => { document.getElementById('employee-payment-type').value = type; document.querySelectorAll('.payment-type-btn').forEach(btn => { btn.classList.toggle('active', btn.dataset.type === type); }); const isHourly = type === 'hourly'; document.getElementById('workload-wrapper').style.display = isHourly ? 'none' : 'block'; document.getElementById('salary-label').textContent = isHourly ? 'Valor por Hora (R$)' : 'Salário (R$)'; document.getElementById('employee-workload').required = !isHourly; };
+            
+            // CORREÇÃO BUG 1: Ajuste na função setPaymentTypeUI
+            const setPaymentTypeUI = (type) => {
+                document.getElementById('employee-payment-type').value = type;
+                document.querySelectorAll('.payment-type-btn').forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.type === type);
+                });
+                const isHourly = type === 'hourly';
+                document.getElementById('workload-wrapper').style.display = isHourly ? 'none' : 'block';
+                document.getElementById('salary-label').textContent = isHourly ? 'Valor por Hora (R$)' : 'Salário (R$)';
+                document.getElementById('employee-workload').required = !isHourly; // Linha corrigida
+            };
+
             setPaymentTypeUI(initialData.paymentType);
             const companyInput = createCompanySearchableDropdown(employeeCompanyContainer, "Pesquisar empresa...", true, (selection) => { if (selection.action === 'create') { employeeModalState = { name: nameInput.value, workload: document.getElementById('employee-workload').value, salary: document.getElementById('employee-salary').value, paymentType: document.getElementById('employee-payment-type').value, isEditing: initialData.isEditing, employeeId: initialData.employeeId }; closeEmployeeModal(); companyToCreateFromModal = selection.value; openCompanyModal(); } else { const company = state.companies.find(c => c.id === selection.id); if(company) { companyInput.value = company.nome; companyInput.dataset.selectedId = company.id; } } });
             const initialCompany = state.companies.find(c => c.id === initialData.companyId);
@@ -912,9 +979,9 @@
 
             let csvRows = [];
             csvRows.push(['Espelho de Ponto']);
-            csvRows.push([`"Funcionário:"`, `"${employee.name}"`]);
-            csvRows.push([`"Empresa:"`, `"${company ? company.nome : 'N/A'}"`]);
-            csvRows.push([`"Período:"`, `"${monthName} de ${state.currentYear}"`]);
+            csvRows.push([`Funcionário:`, employee.name]);
+            csvRows.push([`Empresa:`, company ? company.nome : 'N/A']);
+            csvRows.push([`Período:`, `${monthName} de ${state.currentYear}`]);
             csvRows.push([]); 
 
             const headers = ["Dia", "Dia da Semana", "Status", "Feriado", "Carga Dia", "Entrada 1", "Saida 1", "Entrada 2", "Saida 2", "Total Trabalhado", "Saldo", "H. Extra 50%", "H. Extra 100%", "Ad. Noturno"];
@@ -947,17 +1014,17 @@
             const extra100Value = (monthTotals.extra100 / 60) * hourlyRate * 2.0;
             const nightlyValue = (monthTotals.nightlyRaw / 60) * hourlyRate * (parseFloat(document.getElementById('nightly-percentage').value) / 100);
 
-            csvRows.push([`"Total Horas Trabalhadas:"`, `"${minutesToTime(monthTotals.totalWorked)}"`]);
+            csvRows.push([`Total Horas Trabalhadas:`, minutesToTime(monthTotals.totalWorked)]);
             if(employee.paymentType !== 'hourly') {
-                csvRows.push([`"Saldo Banco de Horas:"`, `"${minutesToTime(monthTotals.balance, true)}"`]);
+                csvRows.push([`Saldo Banco de Horas:`, minutesToTime(monthTotals.balance, true)]);
             }
-            csvRows.push([`"Total H.E. 50%:"`, `"${minutesToTime(monthTotals.extra50)} (${formatCurrency(extra50Value)})"`]);
-            csvRows.push([`"Total H.E. 100%:"`, `"${minutesToTime(monthTotals.extra100)} (${formatCurrency(extra100Value)})"`]);
-            csvRows.push([`"Total Ad. Noturno:"`, `"${minutesToTime(monthTotals.nightly)} (${formatCurrency(nightlyValue)})"`]);
-            csvRows.push([`"Valor Total de Variáveis:"`, `"${formatCurrency(extra50Value + extra100Value + nightlyValue)}"`]);
+            csvRows.push([`Total H.E. 50%:`, `${minutesToTime(monthTotals.extra50)} (${formatCurrency(extra50Value)})`]);
+            csvRows.push([`Total H.E. 100%:`, `${minutesToTime(monthTotals.extra100)} (${formatCurrency(extra100Value)})`]);
+            csvRows.push([`Total Ad. Noturno:`, `${minutesToTime(monthTotals.nightly)} (${formatCurrency(nightlyValue)})`]);
+            csvRows.push([`Valor Total de Variáveis:`, formatCurrency(extra50Value + extra100Value + nightlyValue)]);
 
 
-            const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(",")).join("\n");
+            const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(";")).join("\n");
             const link = document.createElement("a");
             link.setAttribute("href", encodeURI(csvContent));
             const monthStr = String(state.currentMonth + 1).padStart(2, '0');
@@ -978,7 +1045,48 @@
             updateSaveStatus(false, true); 
         };
 
-        const handleTimesheetInputChange = (e) => { const { day, field } = e.target.dataset; const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value; const currentEmployee = state.employees.find(emp => emp.id === state.currentEmployeeId); if (!currentEmployee) return; if (!state.localTimesheet[day]) state.localTimesheet[day] = {}; const dayData = state.localTimesheet[day]; dayData[field] = value; const row = e.target.closest('tr'); const status = row.querySelector('.status-select').value; const isWorkday = !['absent', 'day_off', 'certificate'].includes(status); row.querySelectorAll('.time-input, .manual-input, .workload-input').forEach(input => input.disabled = !isWorkday); row.classList.toggle('bg-slate-100', !isWorkday); row.classList.toggle('text-slate-500', !isWorkday); if (!isWorkday) { row.querySelectorAll('.time-input').forEach(i => i.value = ''); Object.assign(dayData, { entry1: '', exit1: '', entry2: '', exit2: '' }); } const { totalWorkedMinutes, balanceMinutes, overtime50Minutes, overtime100Minutes, nightlyMinutes } = calculateDayTotals(dayData, currentEmployee); if (e.target.classList.contains('manual-input')) { dayData[`manual_${field}`] = true; } else if (['time-input', 'workload-input', 'status-select'].some(c => e.target.classList.contains(c)) || field === 'is_holiday') { delete dayData.manual_extra50; delete dayData.manual_extra100; delete dayData.manual_nightly; } dayData.extra50 = dayData.manual_extra50 ? dayData.extra50 : minutesToTime(overtime50Minutes); dayData.extra100 = dayData.manual_extra100 ? dayData.extra100 : minutesToTime(overtime100Minutes); dayData.nightly = dayData.manual_nightly ? dayData.nightly : minutesToTime(nightlyMinutes); row.querySelector('[data-field="extra50"]').value = dayData.extra50; row.querySelector('[data-field="extra100"]').value = dayData.extra100; row.querySelector('[data-field="nightly"]').value = dayData.nightly; row.querySelector('td:nth-child(9)').textContent = minutesToTime(totalWorkedMinutes); const balanceCell = row.querySelector('td:nth-child(10)'); balanceCell.textContent = currentEmployee.paymentType === 'hourly' ? 'N/A' : minutesToTime(balanceMinutes, true); balanceCell.className = `p-2 text-center font-semibold ${balanceMinutes < 0 ? 'text-red-500' : 'text-green-600'}`; if (!state.hasUnsavedChanges) { state.hasUnsavedChanges = true; updateSaveStatus(); } };
+        const handleTimesheetInputChange = (e) => { 
+            const { day, field } = e.target.dataset; 
+            const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value; 
+            const currentEmployee = state.employees.find(emp => emp.id === state.currentEmployeeId); 
+            if (!currentEmployee) return; 
+            if (!state.localTimesheet[day]) state.localTimesheet[day] = {}; 
+            const dayData = state.localTimesheet[day]; 
+            dayData[field] = value; 
+            const row = e.target.closest('tr'); 
+            const status = row.querySelector('.status-select').value; 
+            const isWorkday = !['absent', 'day_off', 'certificate'].includes(status); 
+            row.querySelectorAll('.time-input, .manual-input, .workload-input').forEach(input => input.disabled = !isWorkday); 
+            row.classList.toggle('bg-slate-200', !isWorkday); 
+            row.classList.toggle('text-slate-600', !isWorkday); 
+            if (!isWorkday) { 
+                row.querySelectorAll('.time-input').forEach(i => i.value = ''); 
+                Object.assign(dayData, { entry1: '', exit1: '', entry2: '', exit2: '' }); 
+            } 
+            const { totalWorkedMinutes, balanceMinutes, overtime50Minutes, overtime100Minutes, nightlyMinutes } = calculateDayTotals(dayData, currentEmployee); 
+            if (e.target.classList.contains('manual-input')) { 
+                dayData[`manual_${field}`] = true; 
+            } else if (['time-input', 'workload-input', 'status-select'].some(c => e.target.classList.contains(c)) || field === 'is_holiday') { 
+                delete dayData.manual_extra50; 
+                delete dayData.manual_extra100; 
+                delete dayData.manual_nightly; 
+            } 
+            dayData.extra50 = dayData.manual_extra50 ? dayData.extra50 : minutesToTime(overtime50Minutes); 
+            dayData.extra100 = dayData.manual_extra100 ? dayData.extra100 : minutesToTime(overtime100Minutes); 
+            dayData.nightly = dayData.manual_nightly ? dayData.nightly : minutesToTime(nightlyMinutes); 
+            row.querySelector('[data-field="extra50"]').value = dayData.extra50; 
+            row.querySelector('[data-field="extra100"]').value = dayData.extra100; 
+            row.querySelector('[data-field="nightly"]').value = dayData.nightly; 
+            row.querySelector('td:nth-child(9)').textContent = minutesToTime(totalWorkedMinutes); 
+            const balanceCell = row.querySelector('td:nth-child(10)'); 
+            balanceCell.textContent = currentEmployee.paymentType === 'hourly' ? 'N/A' : minutesToTime(balanceMinutes, true); 
+            balanceCell.className = `p-2 text-center font-semibold ${balanceMinutes < 0 ? 'text-red-500' : 'text-green-600'}`; 
+            if (!state.hasUnsavedChanges) { 
+                state.hasUnsavedChanges = true; 
+                updateSaveStatus(); 
+            } 
+            renderTimesheetSummary(); 
+        };
         const handleTimesheetNavigation = (e) => { const target = e.target; if (!target.matches('.time-input, .workload-input, .manual-input, .status-select, [data-field="is_holiday"]')) return; const key = e.key; if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) return; e.preventDefault(); const currentTr = target.closest('tr'); const currentTd = target.closest('td'); if (!currentTr || !currentTd) return; const allRows = Array.from(timesheetBody.rows); const rowIndex = allRows.indexOf(currentTr); const cellIndex = Array.from(currentTr.cells).indexOf(currentTd); let nextFocusable = null; if (key === 'ArrowUp' && rowIndex > 0) { nextFocusable = allRows[rowIndex - 1].cells[cellIndex]?.querySelector('input:not([disabled]), select:not([disabled])'); } else if (key === 'ArrowDown' && rowIndex < allRows.length - 1) { nextFocusable = allRows[rowIndex + 1].cells[cellIndex]?.querySelector('input:not([disabled]), select:not([disabled])'); } else if (key === 'ArrowLeft') { let prevTd = currentTd.previousElementSibling; while (prevTd && !nextFocusable) { nextFocusable = prevTd.querySelector('input:not([disabled]), select:not([disabled])'); prevTd = prevTd.previousElementSibling; } } else if (key === 'ArrowRight') { let nextTd = currentTd.nextElementSibling; while (nextTd && !nextFocusable) { nextFocusable = nextTd.querySelector('input:not([disabled]), select:not([disabled])'); nextTd = nextTd.nextElementSibling; } } if (nextFocusable) { nextFocusable.focus(); if (typeof nextFocusable.select === 'function') nextFocusable.select(); } };
 
         // --- INICIALIZAÇÃO ---
@@ -1079,7 +1187,7 @@
             timesheetBody.addEventListener('blur', e => { if (e.target.matches('.time-input, .workload-input, .manual-input')) { const input = e.target; if (input.value.length > 0 && !/^\d{2}:\d{2}$/.test(input.value)) input.value = ''; else if (input.value) { const [hours, minutes] = input.value.split(':').map(Number); if (hours > 23 || minutes > 59) input.value = ''; } } }, true);
         };
         
-        // Auth event listeners
+        // --- SUGESTÃO 4 e Lógica de Autenticação ---
         loginBtn.addEventListener('click', () => { authModal.classList.remove('hidden'); authModal.classList.add('flex'); });
         closeAuthModalBtn.addEventListener('click', () => { authModal.classList.add('hidden'); authModal.classList.remove('flex'); });
         
@@ -1125,16 +1233,29 @@
             registerErrorEl.textContent = ''; 
             const email = document.getElementById('register-email').value; 
             const password = document.getElementById('register-password').value; 
-            try { 
-                await createUserWithEmailAndPassword(auth, email, password); 
+            
+            try {
+                // Se o usuário atual for anônimo, tentamos "promover" a conta
+                if (auth.currentUser && auth.currentUser.isAnonymous) {
+                    const credential = EmailAuthProvider.credential(email, password);
+                    await linkWithCredential(auth.currentUser, credential);
+                } else {
+                    // Fallback para o caso de não haver usuário anônimo (raro)
+                    await createUserWithEmailAndPassword(auth, email, password); 
+                }
                 authModal.classList.add('hidden'); 
                 authModal.classList.remove('flex'); 
             } catch (error) { 
-                console.error("Register error:", error.code, error.message);
-                if (error.code === 'auth/email-already-in-use') { registerErrorEl.textContent = 'Este e-mail já está em uso.'; } 
-                else if (error.code === 'auth/weak-password') { registerErrorEl.textContent = 'A palavra-passe deve ter no mínimo 6 caracteres.'; } 
-                else if (error.code === 'auth/invalid-email') { registerErrorEl.textContent = 'O formato do e-mail é inválido.'; }
-                else { registerErrorEl.textContent = 'Ocorreu um erro ao criar a conta.'; } 
+                console.error("Register/Link error:", error.code, error.message);
+                if (error.code === 'auth/email-already-in-use' || error.code === 'auth/credential-already-in-use') {
+                     registerErrorEl.textContent = 'Este e-mail já está em uso.';
+                } else if (error.code === 'auth/weak-password') { 
+                    registerErrorEl.textContent = 'A senha deve ter no mínimo 6 caracteres.'; 
+                } else if (error.code === 'auth/invalid-email') { 
+                    registerErrorEl.textContent = 'O formato do e-mail é inválido.'; 
+                } else { 
+                    registerErrorEl.textContent = 'Ocorreu um erro ao criar a conta.'; 
+                } 
             } 
         });
         
