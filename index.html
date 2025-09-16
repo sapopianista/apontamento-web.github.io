@@ -713,29 +713,33 @@
             Object.values(dataToCalculate).forEach(dayData => {
                 const dayTotals = calculateDayTotals(dayData, employee);
                 totals.totalWorked += dayTotals.totalWorkedMinutes;
-                totals.balance += dayTotals.balanceMinutes;
-                totals.extra50 += dayData.manual_extra50 ? timeToMinutes(dayData.extra50) : dayTotals.overtime50Minutes;
+                
+                // Acumula o saldo líquido de dias normais.
+                if (employee.paymentType !== 'hourly') {
+                    // Ignora o H.E. 100% do cálculo do saldo principal, pois ele é sempre pago.
+                    if(!dayTotals.overtime100Minutes > 0) {
+                        totals.balance += dayTotals.balanceMinutes;
+                    }
+                }
+
+                // H.E. 100% e Ad. Noturno são sempre devidos e acumulados separadamente.
                 totals.extra100 += dayData.manual_extra100 ? timeToMinutes(dayData.extra100) : dayTotals.overtime100Minutes;
                 totals.nightly += dayData.manual_nightly ? timeToMinutes(dayData.nightly) : dayTotals.nightlyMinutes;
                 totals.nightlyRaw += dayTotals.nightlyMinutesRaw;
             });
 
-            // CORREÇÃO: Lógica para abater horas extras do saldo negativo
-            if (totals.balance < 0 && employee.paymentType !== 'hourly') {
-                let deficit = Math.abs(totals.balance);
-
-                // Consumir H.E. 50%
-                const consumedExtra50 = Math.min(deficit, totals.extra50);
-                totals.balance += consumedExtra50;
-                totals.extra50 -= consumedExtra50;
-                deficit -= consumedExtra50;
-
-                // Se ainda houver deficit, consumir H.E. 100%
-                if (deficit > 0) {
-                    const consumedExtra100 = Math.min(deficit, totals.extra100);
-                    totals.balance += consumedExtra100;
-                    totals.extra100 -= consumedExtra100;
+            // Processamento final: Transforma saldo positivo em H.E. 50%.
+            if (employee.paymentType !== 'hourly') {
+                if (totals.balance > 0) {
+                    totals.extra50 = totals.balance; // Todo saldo positivo vira hora extra 50%.
+                    totals.balance = 0; // O saldo (banco) do mês fecha em zero.
+                } else {
+                    totals.extra50 = 0; // Se saldo for negativo ou zero, não há hora extra 50%.
                 }
+            } else {
+                // Horista não tem saldo ou H.E. 50% nesse modelo.
+                totals.balance = 0;
+                totals.extra50 = 0;
             }
             
             return totals;
@@ -1431,15 +1435,13 @@
             document.body.addEventListener('input', timeInputHandler);
             document.body.addEventListener('blur', timeBlurHandler, true);
 
-            // FIX 3: Add event listener for tolerance change
             document.getElementById('balance-tolerance').addEventListener('change', () => {
                 if (document.getElementById('apontamentos-tab').classList.contains('active')) {
                     renderTimesheet();
                 }
-                renderReport(); // Always update report as it's based on saved data
+                renderReport();
             });
 
-            // FIX 1: Global tooltip handler
             document.body.addEventListener('mouseover', e => {
                 const icon = e.target.closest('.has-tooltip-icon');
                 if (icon) {
