@@ -40,7 +40,8 @@
             top: 100%;
             left: 0;
             right: 0;
-            z-index: 10;
+            /* Z-index fix: Ensure dropdown is above modal content */
+            z-index: 60; 
             max-height: 200px;
             overflow-y: auto;
             background-color: white;
@@ -65,6 +66,31 @@
             border-color: #3b82f6;
             z-index: 10;
          }
+         /* Tooltip for notes */
+        .has-tooltip {
+            position: relative;
+        }
+        .tooltip {
+            visibility: hidden;
+            background-color: #334155;
+            color: #fff;
+            text-align: left;
+            white-space: pre-wrap;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 100;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            width: 250px;
+        }
+        .has-tooltip:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800">
@@ -178,7 +204,8 @@
                         <div id="filter-company-container" class="md:col-span-1 w-full"></div>
                         <button id="add-employee-btn" class="md:col-start-3 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-blue-700 transition justify-self-end">Adicionar Funcionário</button>
                     </div>
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <!-- FIX 1: overflow-hidden changed to overflow-visible -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-visible">
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left">
                                 <thead class="bg-slate-200 text-slate-700 uppercase tracking-wider">
@@ -202,7 +229,7 @@
                         <h3 class="text-lg font-semibold">Gerenciar Empresas</h3>
                         <button id="add-company-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-blue-700 transition">Adicionar Empresa</button>
                     </div>
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-visible">
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm text-left">
                                 <thead class="bg-slate-200 text-slate-700 uppercase tracking-wider">
@@ -210,6 +237,7 @@
                                         <th class="p-4">Código</th>
                                         <th class="p-4">Nome</th>
                                         <th class="p-4">CNPJ</th>
+                                        <th class="p-4">Funcionários</th>
                                         <th class="p-4">Ações</th>
                                     </tr>
                                 </thead>
@@ -297,7 +325,7 @@
                 <div id="configuracoes-tab" class="tab-pane hidden">
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                         <h3 class="text-lg font-semibold mb-4">Configurações de Cálculo</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div>
                                 <h4 class="font-medium mb-2">Adicional Noturno</h4>
                                 <div class="flex items-center gap-4">
@@ -320,6 +348,15 @@
                                 </div>
                                 <p class="text-xs text-slate-500 mt-2">Valor percentual a ser adicionado sobre a hora normal.</p>
                             </div>
+                            <!-- FEATURE: Balance Tolerance -->
+                             <div>
+                                <h4 class="font-medium mb-2">Tolerância do Saldo Diário</h4>
+                                <div>
+                                    <label for="balance-tolerance" class="block text-sm text-slate-600 mb-1">Minutos (ex: 10)</label>
+                                    <input type="number" id="balance-tolerance" value="10" step="1" class="w-full p-2 border border-slate-300 rounded-lg">
+                                </div>
+                                <p class="text-xs text-slate-500 mt-2">Saldos diários (positivos ou negativos) dentro desta tolerância serão zerados.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -328,7 +365,7 @@
     </div>
 
     <!-- Modals -->
-    <div id="employee-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-50">
+    <div id="employee-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4 z-40">
         <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
             <h2 id="modal-title" class="text-xl font-bold mb-4">Adicionar Funcionário</h2>
             <form id="employee-form">
@@ -341,6 +378,7 @@
                     <div>
                         <label for="employee-company-select" class="block text-sm font-medium text-slate-700">Empresa</label>
                         <div id="employee-company-container" class="mt-1 w-full"></div>
+                        <p id="employee-company-error" class="text-red-500 text-xs mt-1 h-3"></p>
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700">Tipo de Pagamento</label>
@@ -357,6 +395,10 @@
                     <div id="workload-wrapper">
                         <label for="employee-workload" class="block text-sm font-medium text-slate-700">Carga Horária Padrão</label>
                         <input type="text" id="employee-workload" value="08:00" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2" required placeholder="HH:MM">
+                    </div>
+                    <div>
+                        <label for="employee-notes" class="block text-sm font-medium text-slate-700">Anotações</label>
+                        <textarea id="employee-notes" rows="3" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"></textarea>
                     </div>
                 </div>
                 <div class="flex justify-end space-x-3 mt-6">
@@ -384,6 +426,10 @@
                         <label for="company-cnpj" class="block text-sm font-medium text-slate-700">CNPJ (Opcional)</label>
                         <input type="text" id="company-cnpj" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2">
                     </div>
+                    <div>
+                        <label for="company-notes" class="block text-sm font-medium text-slate-700">Anotações</label>
+                        <textarea id="company-notes" rows="3" class="mt-1 block w-full border border-slate-300 rounded-md shadow-sm p-2"></textarea>
+                    </div>
                 </div>
                 <div class="flex justify-end space-x-3 mt-6">
                     <button type="button" id="cancel-company-btn" class="bg-slate-200 text-slate-800 px-4 py-2 rounded-lg hover:bg-slate-300">Cancelar</button>
@@ -410,15 +456,14 @@
 
         // --- CONFIGURAÇÃO DO FIREBASE ---
         const firebaseConfig = {
-      apiKey: "AIzaSyDO_iyeQq4SroI_OEZWq8YQqU7en-0beZ8",
-      authDomain: "apontamentos-sec.firebaseapp.com",
-      projectId: "apontamentos-sec",
-      storageBucket: "apontamentos-sec.firebasestorage.app",
-      messagingSenderId: "193014581798",
-      appId: "1:193014581798:web:ef8bc022d7476768ef74e7",
-      measurementId: "G-XJ2J5X4MPK"
-    };
-        // AJUSTE 3: Simplificação da variável appId
+          apiKey: "AIzaSyDO_iyeQq4SroI_OEZWq8YQqU7en-0beZ8",
+          authDomain: "apontamentos-sec.firebaseapp.com",
+          projectId: "apontamentos-sec",
+          storageBucket: "apontamentos-sec.firebasestorage.app",
+          messagingSenderId: "193014581798",
+          appId: "1:193014581798:web:ef8bc022d7476768ef74e7",
+          measurementId: "G-XJ2J5X4MPK"
+        };
         const appId = 'apontamentos-sec';
         let db, auth, userId;
         let unsubscribeCompanies, unsubscribeEmployees, unsubscribeTimesheets;
@@ -455,6 +500,7 @@
         const searchEmployeeInput = document.getElementById('search-employee');
         const filterCompanyContainer = document.getElementById('filter-company-container');
         const employeeCompanyContainer = document.getElementById('employee-company-container');
+        const employeeCompanyError = document.getElementById('employee-company-error');
         const apontamentoCompanyContainer = document.getElementById('apontamento-company-container');
         const apontamentoEmployeeContainer = document.getElementById('apontamento-employee-container');
         const reportCompanyContainer = document.getElementById('report-company-container');
@@ -492,6 +538,7 @@
         let companyToCreateFromModal = null;
         let apontamentoCompanyInput = null;
         let apontamentoEmployeeInput = null;
+        let filterCompanyInput = null;
         let cleanupNameSuggestions = null;
         let appComponentsInitialized = false;
 
@@ -541,10 +588,15 @@
             const totalWorkedMinutes = period1 + period2;
             let nightlyMinutesRaw = calculateNightlyOverlap(entry1, exit1) + calculateNightlyOverlap(entry2, exit2);
             const nightlyMinutesForPayment = nightlyMinutesRaw * (60 / 52.5);
+            
+            const balanceTolerance = parseInt(document.getElementById('balance-tolerance').value) || 0;
+            const rawBalanceMinutes = totalWorkedMinutes - workloadMinutes;
+            const balanceMinutes = Math.abs(rawBalanceMinutes) <= balanceTolerance ? 0 : rawBalanceMinutes;
+            
             if (paymentType === 'hourly') {
                 return { totalWorkedMinutes, balanceMinutes: 0, overtime50Minutes: 0, overtime100Minutes: is_holiday ? totalWorkedMinutes : 0, nightlyMinutes: nightlyMinutesForPayment, nightlyMinutesRaw };
             }
-            const balanceMinutes = totalWorkedMinutes - workloadMinutes;
+
             return { totalWorkedMinutes, balanceMinutes, overtime50Minutes: is_holiday ? 0 : Math.max(0, balanceMinutes), overtime100Minutes: is_holiday ? totalWorkedMinutes : 0, nightlyMinutes: nightlyMinutesForPayment, nightlyMinutesRaw };
         };
         
@@ -562,16 +614,50 @@
             yearSelect.value = state.currentYear;
         };
         
-        const renderCompanyList = () => { companyListBody.innerHTML = state.companies.map(c => `<tr data-id="${c.id}"><td class="p-4 font-medium">${c.codigo}</td><td class="p-4">${c.nome}</td><td class="p-4">${c.cnpj || '-'}</td><td class="p-4 space-x-2 whitespace-nowrap"><button class="edit-company-btn text-blue-600 hover:text-blue-800">Editar</button><button class="delete-company-btn text-red-600 hover:text-red-800">Excluir</button></td></tr>`).join(''); };
+        const renderCompanyList = () => {
+            const employeeCounts = state.employees.reduce((acc, emp) => {
+                if (emp.companyId) acc[emp.companyId] = (acc[emp.companyId] || 0) + 1;
+                return acc;
+            }, {});
+
+            companyListBody.innerHTML = state.companies.map(c => {
+                const notesIcon = c.notes ? `<span class="has-tooltip ml-2 cursor-help"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle text-slate-500" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.064.293.006.399.287.47l.45.082.082.38-2.29.287-.082-.38.45-.083a.5.5 0 0 0 .288-.469l.738-3.468c.064-.293-.006-.399-.287-.47l-.45-.082-.082-.38 2.29-.287zM8 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg><span class="tooltip">${c.notes}</span></span>` : '';
+                return `
+                <tr data-id="${c.id}">
+                    <td class="p-4 font-medium">${c.codigo}</td>
+                    <td class="p-4"><div class="flex items-center">${c.nome}${notesIcon}</div></td>
+                    <td class="p-4">${c.cnpj || '-'}</td>
+                    <td class="p-4 font-medium">${employeeCounts[c.id] || 0}</td>
+                    <td class="p-4 space-x-2 whitespace-nowrap">
+                        <button class="view-employees-btn text-sky-600 hover:text-sky-800" title="Ver Funcionários">Ver</button>
+                        <button class="add-employee-to-company-btn text-green-600 hover:text-green-800" title="Adicionar Funcionário a esta Empresa">Adic.</button>
+                        <button class="edit-company-btn text-blue-600 hover:text-blue-800" title="Editar Empresa">Editar</button>
+                        <button class="delete-company-btn text-red-600 hover:text-red-800" title="Excluir Empresa">Excluir</button>
+                    </td>
+                </tr>`;
+            }).join(''); 
+        };
 
         const renderEmployeeList = () => {
             const filteredEmployees = state.employees.filter(emp => emp.name.toLowerCase().includes(state.searchTerm.toLowerCase()) && (state.companyFilter === '' || emp.companyId === state.companyFilter));
             employeeList.innerHTML = filteredEmployees.map(emp => {
                 const company = state.companies.find(c => c.id === emp.companyId);
-                const companyName = company ? `${company.codigo} - ${company.nome}` : '-';
+                const companyName = company ? `${company.codigo} - ${company.nome}` : '<span class="text-red-500">Sem empresa</span>';
                 const salaryDisplay = emp.paymentType === 'hourly' ? `${parseFloat(emp.salary || 0).toFixed(2)} / hora` : (emp.salary && parseFloat(emp.salary) > 0 ? parseFloat(emp.salary).toFixed(2) : '-');
                 const workloadDisplay = emp.paymentType === 'hourly' ? 'N/A' : (emp.workload || '08:00');
-                return `<tr data-id="${emp.id}"><td class="p-4 font-medium">${emp.name}</td><td class="p-4">${companyName}</td><td class="p-4">${workloadDisplay}</td><td class="p-4">${salaryDisplay}</td><td class="p-4 space-x-2 whitespace-nowrap"><button class="go-to-timesheet-btn text-green-600 hover:text-green-800 font-semibold">Apontamentos</button><button class="edit-btn text-blue-600 hover:text-blue-800">Editar</button><button class="delete-btn text-red-600 hover:text-red-800">Excluir</button></td></tr>`;
+                const notesIcon = emp.notes ? `<span class="has-tooltip ml-2 cursor-help"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-info-circle text-slate-500" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.064.293.006.399.287.47l.45.082.082.38-2.29.287-.082-.38.45-.083a.5.5 0 0 0 .288-.469l.738-3.468c.064-.293-.006-.399-.287-.47l-.45-.082-.082-.38 2.29-.287zM8 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/></svg><span class="tooltip">${emp.notes}</span></span>` : '';
+
+                return `<tr data-id="${emp.id}">
+                    <td class="p-4 font-medium"><div class="flex items-center">${emp.name}${notesIcon}</div></td>
+                    <td class="p-4">${companyName}</td>
+                    <td class="p-4">${workloadDisplay}</td>
+                    <td class="p-4">${salaryDisplay}</td>
+                    <td class="p-4 space-x-2 whitespace-nowrap">
+                        <button class="go-to-timesheet-btn text-green-600 hover:text-green-800 font-semibold">Apontamentos</button>
+                        <button class="edit-btn text-blue-600 hover:text-blue-800">Editar</button>
+                        <button class="delete-btn text-red-600 hover:text-red-800">Excluir</button>
+                    </td>
+                </tr>`;
             }).join('');
         };
 
@@ -640,7 +726,6 @@
             return totals;
         };
 
-        // SUGESTÃO 3: Função para renderizar o resumo mensal
         const renderTimesheetSummary = () => {
             const employee = state.employees.find(e => e.id === state.currentEmployeeId);
             if (!employee) {
@@ -725,19 +810,29 @@
             input.addEventListener('keydown', (e) => { const items = list.querySelectorAll('.searchable-dropdown-item'); if (!items.length) return; if (e.key === 'ArrowDown') highlightIndex = (highlightIndex + 1) % items.length; else if (e.key === 'ArrowUp') highlightIndex = (highlightIndex - 1 + items.length) % items.length; else if (e.key === 'Enter') { e.preventDefault(); if (highlightIndex > -1) selectItem(items[highlightIndex]); } else if (e.key === 'Escape') list.classList.add('hidden'); else return; items.forEach((item, index) => item.classList.toggle('highlighted', index === highlightIndex)); });
             return input;
         };
-        const createCompanySearchableDropdown = (container, placeholder, allowCreate, onSelect) => {
+        const createCompanySearchableDropdown = (container, placeholder, allowCreate, onSelect, initialId = null) => {
             const id = `searchable-company-${crypto.randomUUID()}`;
             container.innerHTML = `<div class="searchable-dropdown w-full"><input type="text" id="${id}-input" placeholder="${placeholder}" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm" autocomplete="off" data-selected-id=""><div id="${id}-list" class="searchable-dropdown-list hidden"></div></div>`;
             const input = document.getElementById(`${id}-input`), list = document.getElementById(`${id}-list`);
+            
+            const setInitialValue = (companyId) => {
+                const company = state.companies.find(c => c.id === companyId);
+                input.value = company ? company.nome : (companyId === '' ? 'Todas as Empresas' : '');
+                input.dataset.selectedId = companyId;
+            };
+
+            if (initialId !== null) setInitialValue(initialId);
+            
             let highlightIndex = -1;
             const updateList = () => { const searchTerm = input.value.toLowerCase(); const filtered = state.companies.filter(c => c.nome.toLowerCase().includes(searchTerm) || c.codigo.toLowerCase().includes(searchTerm)); list.innerHTML = ''; if (allowCreate && searchTerm && !filtered.some(c => c.nome.toLowerCase() === searchTerm || c.codigo.toLowerCase() === searchTerm)) { list.innerHTML += `<div class="searchable-dropdown-item font-medium text-blue-600" data-action="create" data-value="${input.value}">+ Adicionar nova empresa "${input.value}"</div>`; } if (!allowCreate) { list.innerHTML += `<div class="searchable-dropdown-item" data-id="">Todas as Empresas</div>`; } filtered.forEach(c => { list.innerHTML += `<div class="searchable-dropdown-item" data-id="${c.id}">${c.nome} <small class="ml-2">(${c.codigo})</small></div>`; }); list.classList.toggle('hidden', list.innerHTML === ''); highlightIndex = -1; };
-            const selectItem = (item) => { if (!item) return; const id = item.dataset.id; const action = item.dataset.action; if(action === 'create') { onSelect({ action: 'create', value: item.dataset.value }); } else { const company = state.companies.find(c => c.id === id); input.value = company ? company.nome : (id === '' ? 'Todas as Empresas' : ''); input.dataset.selectedId = id; onSelect({ action: 'select', id }); } list.classList.add('hidden'); };
+            const selectItem = (item) => { if (!item) return; const id = item.dataset.id; const action = item.dataset.action; if(action === 'create') { onSelect({ action: 'create', value: item.dataset.value }); } else { setInitialValue(id); onSelect({ action: 'select', id }); } list.classList.add('hidden'); };
             input.addEventListener('input', updateList);
             input.addEventListener('focus', updateList);
             input.addEventListener('blur', () => setTimeout(() => list.classList.add('hidden'), 200));
             list.addEventListener('mousedown', (e) => selectItem(e.target.closest('.searchable-dropdown-item')));
             input.addEventListener('keydown', (e) => { const items = list.querySelectorAll('.searchable-dropdown-item'); if (!items.length) return; if (e.key === 'ArrowDown') highlightIndex = (highlightIndex + 1) % items.length; else if (e.key === 'ArrowUp') highlightIndex = (highlightIndex - 1 + items.length) % items.length; else if (e.key === 'Enter') { e.preventDefault(); if (highlightIndex > -1) selectItem(items[highlightIndex]); } else if (e.key === 'Escape') list.classList.add('hidden'); else return; items.forEach((item, index) => item.classList.toggle('highlighted', index === highlightIndex)); });
-            return input;
+            
+            return { input, setInitialValue };
         };
         const addNameSuggestions = (inputElement) => {
             const container = inputElement.parentElement;
@@ -750,7 +845,7 @@
             container.style.position = 'relative';
             container.appendChild(list);
             const updateSuggestions = () => { const searchTerm = inputElement.value.toLowerCase(); if (searchTerm.length < 2) { list.classList.add('hidden'); return; } const filtered = state.employees.filter(e => e.name.toLowerCase().includes(searchTerm)); if (filtered.length === 0) { list.classList.add('hidden'); return; } list.innerHTML = filtered.map(e => `<div class="searchable-dropdown-item" data-id="${e.id}">${e.name} <small class="ml-2">já cadastrado</small></div>`).join(''); list.classList.remove('hidden'); };
-            const selectSuggestion = (item) => { if (!item) return; const employee = state.employees.find(e => e.id === item.dataset.id); if (employee) { list.classList.add('hidden'); closeEmployeeModal(); openEmployeeModal(employee); } };
+            const selectSuggestion = (item) => { if (!item) return; const employee = state.employees.find(e => e.id === item.dataset.id); if (employee) { list.classList.add('hidden'); closeEmployeeModal(); openEmployeeModal({ isEditing: true, employeeData: employee }); } };
             const inputHandler = () => updateSuggestions();
             const blurHandler = () => setTimeout(() => list.classList.add('hidden'), 200);
             const mousedownHandler = (e) => selectSuggestion(e.target.closest('.searchable-dropdown-item'));
@@ -765,10 +860,10 @@
         const getEmployeeCollection = () => collection(db, `/artifacts/${appId}/users/${userId}/employees`);
         const getCompanyCollection = () => collection(db, `/artifacts/${appId}/users/${userId}/companies`);
         const getTimesheetCollection = () => collection(db, `/artifacts/${appId}/users/${userId}/timesheets`);
-        const saveEmployee = async (id, name, salary, companyId, workload, paymentType) => await setDoc(doc(getEmployeeCollection(), id), { id, name, salary, companyId, workload, paymentType });
-        const saveCompany = async (id, codigo, nome, cnpj) => await setDoc(doc(getCompanyCollection(), id), { id, codigo, nome, cnpj });
+        const saveEmployee = async (id, data) => await setDoc(doc(getEmployeeCollection(), id), data);
+        const saveCompany = async (id, data) => await setDoc(doc(getCompanyCollection(), id), data);
         const deleteEmployeeAndTimesheets = async (id) => {if (!id) return;await deleteDoc(doc(getEmployeeCollection(), id));const batch = writeBatch(db);Object.keys(state.timesheets).filter(key => key.startsWith(id + '_')).forEach(key => batch.delete(doc(getTimesheetCollection(), key)));await batch.commit();closeDeleteModal();};
-        const deleteCompanyAndUpdateEmployees = async (id) => {if (!id) return;const batch = writeBatch(db);state.employees.filter(emp => emp.companyId === id).forEach(emp => {const empRef = doc(getEmployeeCollection(), emp.id);batch.update(empRef, { companyId: "" });});batch.delete(doc(getCompanyCollection(), id));await batch.commit();closeDeleteModal();};
+        const deleteCompany = async (id) => { if (!id) return; await deleteDoc(doc(getCompanyCollection(), id)); closeDeleteModal(); };
         const saveTimesheetData = async (employeeId, month, year, data) => {if (!employeeId) return;const timesheetId = `${employeeId}_${year}-${String(month + 1).padStart(2, '0')}`;await setDoc(doc(getTimesheetCollection(), timesheetId), { data });};
         
         const detachListeners = () => {
@@ -780,7 +875,7 @@
         const setupListeners = () => {
             detachListeners(); 
             unsubscribeCompanies = onSnapshot(getCompanyCollection(), (snapshot) => { state.companies = snapshot.docs.map(doc => doc.data()).sort((a,b) => (a.codigo || "").localeCompare(b.codigo || "")); renderCompanyList(); renderEmployeeList(); renderReport(); });
-            unsubscribeEmployees = onSnapshot(getEmployeeCollection(), (snapshot) => { state.employees = snapshot.docs.map(doc => doc.data()).sort((a, b) => a.name.localeCompare(b.name)); renderEmployeeList(); renderReport(); });
+            unsubscribeEmployees = onSnapshot(getEmployeeCollection(), (snapshot) => { state.employees = snapshot.docs.map(doc => doc.data()).sort((a, b) => a.name.localeCompare(b.name)); renderCompanyList(); renderEmployeeList(); renderReport(); });
             unsubscribeTimesheets = onSnapshot(getTimesheetCollection(), (snapshot) => { state.timesheets = {}; snapshot.docs.forEach(doc => { state.timesheets[doc.id] = doc.data().data; }); renderReport(); if (document.getElementById('apontamentos-tab').classList.contains('active')) { renderTimesheet(); } });
         };
 
@@ -801,21 +896,33 @@
             document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.add('hidden'));document.querySelector(`.tab-button[data-tab="${tabId}"]`).classList.add('active');document.getElementById(`${tabId}-tab`).classList.remove('hidden');if (tabId === 'relatorio') renderReport();if (tabId === 'apontamentos') renderTimesheet();if (tabId === 'empresas') renderCompanyList();
         };
         
-        const openEmployeeModal = (employee = null) => {
+        // FIX 2: Refactored openEmployeeModal
+        const openEmployeeModal = (options = {}) => {
             employeeForm.reset();
+            employeeCompanyError.textContent = '';
             if (cleanupNameSuggestions) { cleanupNameSuggestions(); cleanupNameSuggestions = null; }
-            let initialData = { isEditing: false, employeeId: crypto.randomUUID(), name: '', salary: '', workload: '08:00', companyId: '', paymentType: 'monthly' };
-            if (employeeModalState) { const restoredState = { ...employeeModalState }; employeeModalState = null; initialData = { ...restoredState, companyId: restoredState.newCompanyId }; }
-            else if (employee) { initialData = { isEditing: true, employeeId: employee.id, name: employee.name, salary: employee.salary, workload: employee.workload || '08:00', companyId: employee.companyId, paymentType: employee.paymentType || 'monthly' }; }
+
+            let initialData = { isEditing: false, id: crypto.randomUUID(), name: '', salary: '', workload: '08:00', companyId: '', paymentType: 'monthly', notes: '' };
+
+            if (employeeModalState) { // Restoring state after creating a company
+                const restoredState = { ...employeeModalState };
+                employeeModalState = null;
+                initialData = { ...restoredState, companyId: restoredState.newCompanyId, isEditing: restoredState.isEditing || false };
+            } else if (options.isEditing) { // Editing an existing employee
+                initialData = { ...initialData, ...options.employeeData, isEditing: true };
+            } else if (options.prefillCompanyId) { // Adding new employee from company tab
+                initialData.companyId = options.prefillCompanyId;
+            }
+            
             modalTitle.textContent = initialData.isEditing ? 'Editar Funcionário' : 'Adicionar Funcionário';
-            document.getElementById('employee-id').value = initialData.employeeId;
+            document.getElementById('employee-id').value = initialData.id;
             const nameInput = document.getElementById('employee-name');
             nameInput.value = initialData.name;
             document.getElementById('employee-salary').value = initialData.salary;
-            document.getElementById('employee-workload').value = initialData.workload;
+            document.getElementById('employee-workload').value = initialData.workload || '08:00';
+            document.getElementById('employee-notes').value = initialData.notes || '';
             if (!initialData.isEditing) { cleanupNameSuggestions = addNameSuggestions(nameInput); }
             
-            // CORREÇÃO BUG 1: Ajuste na função setPaymentTypeUI
             const setPaymentTypeUI = (type) => {
                 document.getElementById('employee-payment-type').value = type;
                 document.querySelectorAll('.payment-type-btn').forEach(btn => {
@@ -824,25 +931,101 @@
                 const isHourly = type === 'hourly';
                 document.getElementById('workload-wrapper').style.display = isHourly ? 'none' : 'block';
                 document.getElementById('salary-label').textContent = isHourly ? 'Valor por Hora (R$)' : 'Salário (R$)';
-                document.getElementById('employee-workload').required = !isHourly; // Linha corrigida
+                document.getElementById('employee-workload').required = !isHourly; 
             };
 
-            setPaymentTypeUI(initialData.paymentType);
-            const companyInput = createCompanySearchableDropdown(employeeCompanyContainer, "Pesquisar empresa...", true, (selection) => { if (selection.action === 'create') { employeeModalState = { name: nameInput.value, workload: document.getElementById('employee-workload').value, salary: document.getElementById('employee-salary').value, paymentType: document.getElementById('employee-payment-type').value, isEditing: initialData.isEditing, employeeId: initialData.employeeId }; closeEmployeeModal(); companyToCreateFromModal = selection.value; openCompanyModal(); } else { const company = state.companies.find(c => c.id === selection.id); if(company) { companyInput.value = company.nome; companyInput.dataset.selectedId = company.id; } } });
-            const initialCompany = state.companies.find(c => c.id === initialData.companyId);
-            if (initialCompany) { companyInput.value = initialCompany.nome; companyInput.dataset.selectedId = initialCompany.id; }
+            setPaymentTypeUI(initialData.paymentType || 'monthly');
+            
+            const companyDropdown = createCompanySearchableDropdown(employeeCompanyContainer, "Pesquisar empresa...", true, (selection) => {
+                 if (selection.action === 'create') { 
+                    employeeModalState = { ...initialData };
+                    delete employeeModalState.isEditing; // clear editing flag
+                    closeEmployeeModal(); 
+                    companyToCreateFromModal = selection.value; 
+                    openCompanyModal();
+                } else { 
+                    const company = state.companies.find(c => c.id === selection.id); 
+                    if(company) { 
+                        companyDropdown.input.value = company.nome; 
+                        companyDropdown.input.dataset.selectedId = company.id; 
+                    } 
+                }
+            }, initialData.companyId);
+            
             employeeModal.classList.remove('hidden'); employeeModal.classList.add('flex');
         };
 
         const closeEmployeeModal = () => { if (cleanupNameSuggestions) { cleanupNameSuggestions(); cleanupNameSuggestions = null; } employeeModal.classList.add('hidden'); };
-        const openCompanyModal = (company = null) => { companyForm.reset(); const nameInput = document.getElementById('company-name'), codeInput = document.getElementById('company-code'); if (company) { document.getElementById('company-modal-title').textContent = 'Editar Empresa'; document.getElementById('company-id').value = company.id; codeInput.value = company.codigo; nameInput.value = company.nome; document.getElementById('company-cnpj').value = company.cnpj || ''; } else { document.getElementById('company-modal-title').textContent = 'Adicionar Empresa'; document.getElementById('company-id').value = crypto.randomUUID(); if(companyToCreateFromModal){ if(/^\d+$/.test(companyToCreateFromModal)){ codeInput.value = companyToCreateFromModal; } else { nameInput.value = companyToCreateFromModal; } companyToCreateFromModal = null; } } companyModal.classList.remove('hidden'); companyModal.classList.add('flex'); };
+        const openCompanyModal = (company = null) => { companyForm.reset(); const nameInput = document.getElementById('company-name'), codeInput = document.getElementById('company-code'); if (company) { document.getElementById('company-modal-title').textContent = 'Editar Empresa'; document.getElementById('company-id').value = company.id; codeInput.value = company.codigo; nameInput.value = company.nome; document.getElementById('company-cnpj').value = company.cnpj || ''; document.getElementById('company-notes').value = company.notes || ''; } else { document.getElementById('company-modal-title').textContent = 'Adicionar Empresa'; document.getElementById('company-id').value = crypto.randomUUID(); if(companyToCreateFromModal){ if(/^\d+$/.test(companyToCreateFromModal)){ codeInput.value = companyToCreateFromModal; } else { nameInput.value = companyToCreateFromModal; } companyToCreateFromModal = null; } } companyModal.classList.remove('hidden'); companyModal.classList.add('flex'); };
         const closeCompanyModal = () => companyModal.classList.add('hidden');
-        const openDeleteModal = (id, type) => {let text;if (type === 'employee') {const employee = state.employees.find(e => e.id === id);if (!employee) return;itemToDelete = { id, type, name: employee.name };text = `Tem certeza de que deseja excluir o funcionário <strong>${itemToDelete.name}</strong>? Todos os seus apontamentos também serão apagados. Esta ação não pode ser desfeita.`;} else if (type === 'company') {const company = state.companies.find(c => c.id === id);if (!company) return;itemToDelete = { id, type, name: company.nome };text = `Tem certeza de que deseja excluir a empresa <strong>${itemToDelete.name}</strong>? Os funcionários associados a ela não serão excluídos, mas ficarão sem empresa.`;}deleteConfirmText.innerHTML = text;deleteConfirmModal.classList.remove('hidden');deleteConfirmModal.classList.add('flex');};
+        const openDeleteModal = (id, type) => {
+            let text;
+            confirmDeleteBtn.disabled = false;
+            if (type === 'employee') {
+                const employee = state.employees.find(e => e.id === id);
+                if (!employee) return;
+                itemToDelete = { id, type, name: employee.name };
+                text = `Tem certeza de que deseja excluir o funcionário <strong>${itemToDelete.name}</strong>? Todos os seus apontamentos também serão apagados. Esta ação não pode ser desfeita.`;
+            } else if (type === 'company') {
+                const company = state.companies.find(c => c.id === id);
+                if (!company) return;
+                itemToDelete = { id, type, name: company.nome };
+                const employeeCount = state.employees.filter(e => e.companyId === id).length;
+                if (employeeCount > 0) {
+                    text = `Não é possível excluir a empresa <strong>${itemToDelete.name}</strong> pois ela possui <strong>${employeeCount}</strong> funcionário(s). Por favor, reatribua ou exclua os funcionários primeiro.`;
+                    confirmDeleteBtn.disabled = true;
+                } else {
+                    text = `Tem certeza de que deseja excluir a empresa <strong>${itemToDelete.name}</strong>? Esta ação não pode ser desfeita.`;
+                }
+            }
+            deleteConfirmText.innerHTML = text;
+            deleteConfirmModal.classList.remove('hidden');
+            deleteConfirmModal.classList.add('flex');
+        };
         const closeDeleteModal = () => {deleteConfirmModal.classList.add('hidden');itemToDelete = { id: null, type: null, name: '' };};
 
-        const handleEmployeeFormSubmit = async (e) => { e.preventDefault(); const id = document.getElementById('employee-id').value; const name = document.getElementById('employee-name').value; const salary = document.getElementById('employee-salary').value || "0"; const companyInput = employeeCompanyContainer.querySelector('input'); const companyId = companyInput.dataset.selectedId || ""; const workload = document.getElementById('employee-workload').value; const paymentType = document.getElementById('employee-payment-type').value; await saveEmployee(id, name, salary, companyId, workload, paymentType); closeEmployeeModal(); };
-        const handleCompanyFormSubmit = async (e) => { e.preventDefault(); const id = document.getElementById('company-id').value; const codigo = document.getElementById('company-code').value; const nome = document.getElementById('company-name').value; const cnpj = document.getElementById('company-cnpj').value; await saveCompany(id, codigo, nome, cnpj); closeCompanyModal(); if (employeeModalState) { employeeModalState.newCompanyId = id; setTimeout(() => openEmployeeModal(), 150); } };
-        const handleConfirmDelete = () => {if (itemToDelete.type === 'employee') deleteEmployeeAndTimesheets(itemToDelete.id);else if (itemToDelete.type === 'company') deleteCompanyAndUpdateEmployees(itemToDelete.id);};
+        const handleEmployeeFormSubmit = async (e) => {
+            e.preventDefault();
+            employeeCompanyError.textContent = '';
+            const companyInput = employeeCompanyContainer.querySelector('input');
+            const companyId = companyInput.dataset.selectedId || "";
+
+            if (!companyId) {
+                employeeCompanyError.textContent = 'A seleção de uma empresa é obrigatória.';
+                return;
+            }
+            
+            const id = document.getElementById('employee-id').value;
+            const employeeData = {
+                id,
+                name: document.getElementById('employee-name').value,
+                salary: document.getElementById('employee-salary').value || "0",
+                companyId,
+                workload: document.getElementById('employee-workload').value,
+                paymentType: document.getElementById('employee-payment-type').value,
+                notes: document.getElementById('employee-notes').value
+            };
+            await saveEmployee(id, employeeData);
+            closeEmployeeModal();
+        };
+        const handleCompanyFormSubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('company-id').value;
+            const companyData = {
+                id,
+                codigo: document.getElementById('company-code').value,
+                nome: document.getElementById('company-name').value,
+                cnpj: document.getElementById('company-cnpj').value,
+                notes: document.getElementById('company-notes').value
+            };
+            await saveCompany(id, companyData);
+            closeCompanyModal();
+            if (employeeModalState) {
+                employeeModalState.newCompanyId = id;
+                setTimeout(() => openEmployeeModal(employeeModalState), 150);
+            }
+        };
+        const handleConfirmDelete = () => {if (itemToDelete.type === 'employee') deleteEmployeeAndTimesheets(itemToDelete.id);else if (itemToDelete.type === 'company') deleteCompany(itemToDelete.id);};
         const handleDateChange = (e) => {
             if(state.hasUnsavedChanges) {
                 if(!confirm("Você tem alterações não salvas que serão perdidas. Deseja continuar?")) {
@@ -1149,11 +1332,11 @@
                 return true;
             };
 
-            apontamentoCompanyInput = createCompanySearchableDropdown(apontamentoCompanyContainer, "Pesquisar empresa...", false, (selection) => { handleNavigationWithUnsavedChanges(() => { if (selection.action === 'select') { state.apontamentoCompanyId = selection.id; state.currentEmployeeId = null; if(apontamentoEmployeeInput) { apontamentoEmployeeInput.value = ''; apontamentoEmployeeInput.dataset.selectedId = ''; apontamentoEmployeeInput.disabled = !selection.id; apontamentoEmployeeInput.placeholder = selection.id ? "Pesquisar funcionário..." : "Selecione uma empresa"; } renderTimesheet(); const company = state.companies.find(c=>c.id === selection.id); if(company) {apontamentoCompanyInput.value = company.nome;} else {apontamentoCompanyInput.value = "Todas as Empresas"} } })});
+            apontamentoCompanyInput = createCompanySearchableDropdown(apontamentoCompanyContainer, "Pesquisar empresa...", false, (selection) => { handleNavigationWithUnsavedChanges(() => { if (selection.action === 'select') { state.apontamentoCompanyId = selection.id; state.currentEmployeeId = null; if(apontamentoEmployeeInput) { apontamentoEmployeeInput.value = ''; apontamentoEmployeeInput.dataset.selectedId = ''; apontamentoEmployeeInput.disabled = !selection.id; apontamentoEmployeeInput.placeholder = selection.id ? "Pesquisar funcionário..." : "Selecione uma empresa"; } renderTimesheet(); const company = state.companies.find(c=>c.id === selection.id); if(company) {apontamentoCompanyInput.input.value = company.nome;} else {apontamentoCompanyInput.input.value = "Todas as Empresas"} } })}).input;
             apontamentoEmployeeInput = createEmployeeSearchableDropdown(apontamentoEmployeeContainer, "Selecione uma empresa", () => state.apontamentoCompanyId ? state.employees.filter(e => e.companyId === state.apontamentoCompanyId) : [], (selection) => { handleNavigationWithUnsavedChanges(() => { if (selection.id) { state.currentEmployeeId = selection.id; renderTimesheet(); const employee = state.employees.find(emp=>emp.id === selection.id); if(employee){apontamentoEmployeeInput.value = employee.name; apontamentoEmployeeInput.dataset.selectedId = employee.id;} } })});
             apontamentoEmployeeInput.disabled = true;
 
-            createCompanySearchableDropdown(filterCompanyContainer, "Filtrar por empresa...", false, (selection) => { if (selection.action === 'select') { state.companyFilter = selection.id; renderEmployeeList(); const input = filterCompanyContainer.querySelector('input'); const company = state.companies.find(c => c.id === selection.id); input.value = company ? company.nome : 'Todas as Empresas'; } });
+            filterCompanyInput = createCompanySearchableDropdown(filterCompanyContainer, "Filtrar por empresa...", false, (selection) => { if (selection.action === 'select') { state.companyFilter = selection.id; renderEmployeeList(); const company = state.companies.find(c => c.id === selection.id); filterCompanyInput.input.value = company ? company.nome : 'Todas as Empresas'; } });
             createCompanySearchableDropdown(reportCompanyContainer, "Filtrar por empresa...", false, (selection) => { if (selection.action === 'select') { state.reportCompanyFilter = selection.id; renderReport(); const input = reportCompanyContainer.querySelector('input'); const company = state.companies.find(c => c.id === selection.id); input.value = company ? company.nome : 'Todas as Empresas'; } });
 
             populateDateSelectors();
@@ -1179,12 +1362,60 @@
             exportPdfBtn.addEventListener('click', handlePdfExport);
             exportCsvBtn.addEventListener('click', handleCsvExport);
             saveTimesheetBtn.addEventListener('click', handleSaveTimesheet);
-            employeeList.addEventListener('click', (e) => { const row = e.target.closest('tr'); if (!row) return; const id = row.dataset.id; if (e.target.classList.contains('edit-btn')) openEmployeeModal(state.employees.find(emp => emp.id === id)); else if (e.target.classList.contains('delete-btn')) openDeleteModal(id, 'employee'); else if (e.target.classList.contains('go-to-timesheet-btn')) { handleNavigationWithUnsavedChanges(() => {const employee = state.employees.find(emp => emp.id === id); if(employee){ const company = state.companies.find(c => c.id === employee.companyId); state.apontamentoCompanyId = employee.companyId; state.currentEmployeeId = id; if (apontamentoCompanyInput && company) { apontamentoCompanyInput.value = company.nome; apontamentoCompanyInput.dataset.selectedId = company.id; } else { apontamentoCompanyInput.value = ''; } if (apontamentoEmployeeInput) { apontamentoEmployeeInput.value = employee.name; apontamentoEmployeeInput.dataset.selectedId = id; apontamentoEmployeeInput.disabled = false; } switchToTab('apontamentos'); }}); } });
-            companyListBody.addEventListener('click', (e) => { const row = e.target.closest('tr'); if (!row) return; const id = row.dataset.id; if (e.target.classList.contains('edit-company-btn')) openCompanyModal(state.companies.find(c => c.id === id)); else if (e.target.classList.contains('delete-company-btn')) openDeleteModal(id, 'company'); });
+            employeeList.addEventListener('click', (e) => { 
+                const row = e.target.closest('tr'); if (!row) return; 
+                const id = row.dataset.id; 
+                if (e.target.classList.contains('edit-btn')) {
+                    openEmployeeModal({ isEditing: true, employeeData: state.employees.find(emp => emp.id === id) });
+                } else if (e.target.classList.contains('delete-btn')) {
+                     openDeleteModal(id, 'employee');
+                } else if (e.target.classList.contains('go-to-timesheet-btn')) { 
+                    handleNavigationWithUnsavedChanges(() => {
+                        const employee = state.employees.find(emp => emp.id === id); 
+                        if(employee){ 
+                            const company = state.companies.find(c => c.id === employee.companyId); 
+                            state.apontamentoCompanyId = employee.companyId; 
+                            state.currentEmployeeId = id; 
+                            if (apontamentoCompanyInput && company) { 
+                                apontamentoCompanyInput.value = company.nome; 
+                                apontamentoCompanyInput.dataset.selectedId = company.id; 
+                            } else { 
+                                apontamentoCompanyInput.value = ''; 
+                            } 
+                            if (apontamentoEmployeeInput) { 
+                                apontamentoEmployeeInput.value = employee.name; 
+                                apontamentoEmployeeInput.dataset.selectedId = id; 
+                                apontamentoEmployeeInput.disabled = false; 
+                            } 
+                            switchToTab('apontamentos'); 
+                        }
+                    }); 
+                } 
+            });
+            companyListBody.addEventListener('click', (e) => { 
+                const row = e.target.closest('tr'); if (!row) return; 
+                const id = row.dataset.id; 
+                if (e.target.classList.contains('edit-company-btn')) {
+                    openCompanyModal(state.companies.find(c => c.id === id)); 
+                } else if (e.target.classList.contains('delete-company-btn')) {
+                    openDeleteModal(id, 'company'); 
+                } else if (e.target.classList.contains('view-employees-btn')) {
+                    state.companyFilter = id;
+                    filterCompanyInput.setInitialValue(id);
+                    renderEmployeeList();
+                    switchToTab('funcionarios');
+                } else if (e.target.classList.contains('add-employee-to-company-btn')) {
+                    openEmployeeModal({ prefillCompanyId: id });
+                }
+            });
             timesheetBody.addEventListener('change', handleTimesheetInputChange);
             timesheetBody.addEventListener('keydown', handleTimesheetNavigation);
-            timesheetBody.addEventListener('input', e => { if (e.target.matches('.time-input, .workload-input, .manual-input')) { const input = e.target; let value = input.value.replace(/\D/g, ''); input.value = value.length > 2 ? value.slice(0, 2) + ':' + value.slice(2, 4) : value; } });
-            timesheetBody.addEventListener('blur', e => { if (e.target.matches('.time-input, .workload-input, .manual-input')) { const input = e.target; if (input.value.length > 0 && !/^\d{2}:\d{2}$/.test(input.value)) input.value = ''; else if (input.value) { const [hours, minutes] = input.value.split(':').map(Number); if (hours > 23 || minutes > 59) input.value = ''; } } }, true);
+            
+            const timeInputHandler = e => { if (e.target.matches('.time-input, .workload-input, .manual-input, #employee-workload')) { const input = e.target; let value = input.value.replace(/\D/g, ''); input.value = value.length > 2 ? value.slice(0, 2) + ':' + value.slice(2, 4) : value; } };
+            const timeBlurHandler = e => { if (e.target.matches('.time-input, .workload-input, .manual-input, #employee-workload')) { const input = e.target; if (input.value.length > 0 && !/^\d{2}:\d{2}$/.test(input.value)) input.value = ''; else if (input.value) { const [hours, minutes] = input.value.split(':').map(Number); if (hours > 23 || minutes > 59) input.value = ''; } } };
+
+            document.body.addEventListener('input', timeInputHandler);
+            document.body.addEventListener('blur', timeBlurHandler, true);
         };
         
         // --- SUGESTÃO 4 e Lógica de Autenticação ---
