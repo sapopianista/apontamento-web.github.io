@@ -253,7 +253,7 @@
                         <div class="flex items-center gap-4 self-end">
                             <span id="save-status" class="text-sm text-slate-500 font-medium"></span>
                             <button id="save-timesheet-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-blue-700 transition disabled:bg-slate-400 disabled:cursor-not-allowed" disabled>Salvar Alterações</button>
-                            <button id="export-csv-btn" class="bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-emerald-700 transition">Exportar CSV</button>
+                            <button id="export-xls-btn" class="bg-emerald-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-emerald-700 transition">Exportar XLS</button>
                             <button id="export-pdf-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-green-700 transition">Imprimir / Gerar PDF</button>
                         </div>
                     </div>
@@ -274,7 +274,7 @@
                                         <th class="p-3 text-center">Saldo</th>
                                         <th class="p-3">H.E. 50%</th>
                                         <th class="p-3">H.E. 100%</th>
-                                        <th class="p-3">Ad. Not.</th>
+                                        <th class="p-3">Ad. Noturno</th>
                                     </tr>
                                 </thead>
                                 <tbody id="timesheet-body" class="divide-y divide-slate-200"></tbody>
@@ -299,6 +299,7 @@
                                         <th class="p-4">Nome</th>
                                         <th class="p-4 text-center">Total Trab.</th>
                                         <th class="p-4 text-center">Saldo</th>
+                                        <th class="p-4 text-center">Faltas</th>
                                         <th class="p-4 text-right">H. Extra 50%</th>
                                         <th class="p-4 text-right">H. Extra 100%</th>
                                         <th class="p-4 text-right">Ad. Noturno</th>
@@ -321,11 +322,11 @@
                                 <div class="flex items-center gap-4">
                                     <div>
                                         <label for="nightly-start" class="block text-sm text-slate-600 mb-1">Início</label>
-                                        <input type="time" id="nightly-start" value="22:00" class="w-full p-2 border border-slate-300 rounded-lg">
+                                        <input type="time" id="nightly-start" value="22:00" class="setting-input w-full p-2 border border-slate-300 rounded-lg">
                                     </div>
                                     <div>
                                         <label for="nightly-end" class="block text-sm text-slate-600 mb-1">Fim</label>
-                                        <input type="time" id="nightly-end" value="05:00" class="w-full p-2 border border-slate-300 rounded-lg">
+                                        <input type="time" id="nightly-end" value="05:00" class="setting-input w-full p-2 border border-slate-300 rounded-lg">
                                     </div>
                                 </div>
                                 <p class="text-xs text-slate-500 mt-2">Define o período de trabalho considerado como noturno.</p>
@@ -334,7 +335,7 @@
                                 <h4 class="font-medium mb-2">Percentual do Adicional Noturno</h4>
                                 <div>
                                     <label for="nightly-percentage" class="block text-sm text-slate-600 mb-1">Percentual (%)</label>
-                                    <input type="number" id="nightly-percentage" value="20" step="0.1" class="w-full p-2 border border-slate-300 rounded-lg">
+                                    <input type="number" id="nightly-percentage" value="20" step="0.1" class="setting-input w-full p-2 border border-slate-300 rounded-lg">
                                 </div>
                                 <p class="text-xs text-slate-500 mt-2">Valor percentual a ser adicionado sobre a hora normal.</p>
                             </div>
@@ -343,7 +344,7 @@
                                 <h4 class="font-medium mb-2">Tolerância do Saldo Diário</h4>
                                 <div>
                                     <label for="balance-tolerance" class="block text-sm text-slate-600 mb-1">Minutos (ex: 10)</label>
-                                    <input type="number" id="balance-tolerance" value="10" step="1" class="w-full p-2 border border-slate-300 rounded-lg">
+                                    <input type="number" id="balance-tolerance" value="0" step="1" class="setting-input w-full p-2 border border-slate-300 rounded-lg">
                                 </div>
                                 <p class="text-xs text-slate-500 mt-2">Saldos diários (positivos ou negativos) dentro desta tolerância serão zerados.</p>
                             </div>
@@ -372,7 +373,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700">Tipo de Pagamento</label>
-                        <div class="mt-1 flex rounded-md shadow-sm">
+                        <div class="mt-1 flex rounded-md shadow-sm payment-type-container">
                             <button type="button" data-type="monthly" class="payment-type-btn relative inline-flex items-center space-x-2 rounded-l-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Mensalista</button>
                             <button type="button" data-type="hourly" class="payment-type-btn relative -ml-px inline-flex items-center space-x-2 rounded-r-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Horista</button>
                         </div>
@@ -449,17 +450,18 @@
 
         // --- CONFIGURAÇÃO DO FIREBASE ---
         const firebaseConfig = {
-          apiKey: "AIzaSyDO_iyeQq4SroI_OEZWq8YQqU7en-0beZ8",
-          authDomain: "apontamentos-sec.firebaseapp.com",
-          projectId: "apontamentos-sec",
-          storageBucket: "apontamentos-sec.firebasestorage.app",
-          messagingSenderId: "193014581798",
-          appId: "1:193014581798:web:ef8bc022d7476768ef74e7",
-          measurementId: "G-XJ2J5X4MPK"
-        };
-        const appId = 'apontamentos-sec';
+    		apiKey: "AIzaSyCKlL_0a2Qn5UxGxF9KTDXq_i-UueooLf0",
+    		authDomain: "apontamento-web.firebaseapp.com",
+    		projectId: "apontamento-web",
+    		storageBucket: "apontamento-web.firebasestorage.app",
+    		messagingSenderId: "268053216483",
+    		appId: "1:268053216483:web:1c397c324e14510b8999d6",
+    		measurementId: "G-ZRWWQRZMRN"
+	};
+
+        const appId = 'apontamento-web';
         let db, auth, userId;
-        let unsubscribeCompanies, unsubscribeEmployees, unsubscribeTimesheets;
+        let unsubscribeCompanies, unsubscribeEmployees, unsubscribeTimesheets, unsubscribeSettings;
 
         // --- ELEMENTOS DA UI ---
         const loadingEl = document.getElementById('loading');
@@ -498,7 +500,7 @@
         const apontamentoEmployeeContainer = document.getElementById('apontamento-employee-container');
         const reportCompanyContainer = document.getElementById('report-company-container');
         const exportPdfBtn = document.getElementById('export-pdf-btn');
-        const exportCsvBtn = document.getElementById('export-csv-btn');
+        const exportXlsBtn = document.getElementById('export-xls-btn');
         const deleteConfirmModal = document.getElementById('delete-confirm-modal');
         const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
         const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
@@ -545,8 +547,11 @@
         };
 
         // --- FUNÇÕES DE LÓGICA E CÁLCULO ---
-        const timeToMinutes = (timeStr) => {if (!timeStr || !/^\d{2}:\d{2}$/.test(timeStr)) return 0;const [hours, minutes] = timeStr.split(':').map(Number);return isNaN(hours) || isNaN(minutes) ? 0 : hours * 60 + minutes;};
-        const minutesToTime = (minutes, showSignal = false) => {if (isNaN(minutes) || minutes === null) return "00:00";const sign = minutes < 0 ? "-" : (showSignal ? "+" : "");const absMinutes = Math.abs(Math.round(minutes));const h = Math.floor(absMinutes / 60).toString().padStart(2, '0');const m = (absMinutes % 60).toString().padStart(2, '0');return `${sign}${h}:${m}`;};
+        const roundUp = (num, places) => { const factor = Math.pow(10, places); return Math.ceil(num * factor) / factor; };
+        const timeToDecimal = (timeStr) => { if (!timeStr || !/^\d{2}:\d{2}$/.test(timeStr)) return 0; const [hours, minutes] = timeStr.split(':').map(Number); if (isNaN(hours) || isNaN(minutes)) return 0; return hours + (minutes / 60); };
+        const decimalToMinutes = (decimalHours) => { if (isNaN(decimalHours) || decimalHours === null) return 0; return Math.round(decimalHours * 60); };
+        const minutesToTime = (minutes, showSignal = false) => { if (isNaN(minutes) || minutes === null) return "00:00"; const sign = minutes < 0 ? "-" : (showSignal ? "+" : ""); const absMinutes = Math.abs(Math.round(minutes)); const h = Math.floor(absMinutes / 60).toString().padStart(2, '0'); const m = (absMinutes % 60).toString().padStart(2, '0'); return `${sign}${h}:${m}`; };
+        const formatDecimal = (decimalHours) => { if (isNaN(decimalHours) || decimalHours === null) return "0.00"; return decimalHours.toFixed(2); };
         const formatCurrency = (value) => (value || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
         
         const calculateIntervalOverlap = (start1, end1, start2, end2) => {
@@ -556,43 +561,73 @@
         };
 
         const calculateNightlyOverlap = (workStart, workEnd) => {
-            if (!workStart && !workEnd || workStart === workEnd) return 0;
-            const nightStart = timeToMinutes(document.getElementById('nightly-start').value);
-            const nightEnd = timeToMinutes(document.getElementById('nightly-end').value);
+            if (workStart === workEnd) return 0;
+            const nightStart = timeToDecimal(document.getElementById('nightly-start').value);
+            const nightEnd = timeToDecimal(document.getElementById('nightly-end').value);
             let totalOverlap = 0;
-            if (nightStart <= nightEnd) {
+            if (nightStart <= nightEnd) { 
                 if (workStart < workEnd) { totalOverlap += calculateIntervalOverlap(workStart, workEnd, nightStart, nightEnd); }
-                else { totalOverlap += calculateIntervalOverlap(workStart, 1440, nightStart, nightEnd); totalOverlap += calculateIntervalOverlap(0, workEnd, nightStart, nightEnd); }
-            } else {
-                const nightPeriod1 = { start: nightStart, end: 1440 }, nightPeriod2 = { start: 0, end: nightEnd };
-                if (workStart < workEnd) { totalOverlap += calculateIntervalOverlap(workStart, workEnd, nightPeriod1.start, nightPeriod1.end); totalOverlap += calculateIntervalOverlap(workStart, workEnd, nightPeriod2.start, nightPeriod2.end); }
-                else { const workPeriod1 = { start: workStart, end: 1440 }, workPeriod2 = { start: 0, end: workEnd }; totalOverlap += calculateIntervalOverlap(workPeriod1.start, workPeriod1.end, nightPeriod1.start, nightPeriod1.end); totalOverlap += calculateIntervalOverlap(workPeriod2.start, workPeriod2.end, nightPeriod2.start, nightPeriod2.end); }
+                else { totalOverlap += calculateIntervalOverlap(workStart, 24, nightStart, nightEnd); totalOverlap += calculateIntervalOverlap(0, workEnd, nightStart, nightEnd); }
+            } else { 
+                const nightPeriod1 = { start: nightStart, end: 24 };
+                const nightPeriod2 = { start: 0, end: nightEnd }; 
+                if (workStart < workEnd) { 
+                    totalOverlap += calculateIntervalOverlap(workStart, workEnd, nightPeriod1.start, nightPeriod1.end); 
+                    totalOverlap += calculateIntervalOverlap(workStart, workEnd, nightPeriod2.start, nightPeriod2.end);
+                } else {
+                    const workPeriod1 = { start: workStart, end: 24 };
+                    const workPeriod2 = { start: 0, end: workEnd };
+                    totalOverlap += calculateIntervalOverlap(workPeriod1.start, workPeriod1.end, nightPeriod1.start, nightPeriod1.end);
+                    totalOverlap += calculateIntervalOverlap(workPeriod2.start, workPeriod2.end, nightPeriod2.start, nightPeriod2.end);
+                }
             }
             return totalOverlap;
         };
-
+        
         const calculateDayTotals = (dayData, employee) => {
             const { workload = '08:00', paymentType = 'monthly' } = employee || {};
             const { status = 'workday', is_holiday = false, daily_workload = workload } = dayData;
-            const workloadMinutes = timeToMinutes(daily_workload);
-            if (status === 'absent') return { totalWorkedMinutes: 0, balanceMinutes: -workloadMinutes, overtime50Minutes: 0, overtime100Minutes: 0, nightlyMinutes: 0, nightlyMinutesRaw: 0 };
-            if (['day_off', 'certificate'].includes(status)) return { totalWorkedMinutes: 0, balanceMinutes: 0, overtime50Minutes: 0, overtime100Minutes: 0, nightlyMinutes: 0, nightlyMinutesRaw: 0 };
-            const entry1 = timeToMinutes(dayData.entry1), exit1 = timeToMinutes(dayData.exit1), entry2 = timeToMinutes(dayData.entry2), exit2 = timeToMinutes(dayData.exit2);
-            let period1 = (exit1 > 0 && entry1 > 0) ? (exit1 >= entry1 ? exit1 - entry1 : (1440 - entry1) + exit1) : 0;
-            let period2 = (exit2 > 0 && entry2 > 0) ? (exit2 >= entry2 ? exit2 - entry2 : (1440 - entry2) + exit2) : 0;
-            const totalWorkedMinutes = period1 + period2;
-            let nightlyMinutesRaw = calculateNightlyOverlap(entry1, exit1) + calculateNightlyOverlap(entry2, exit2);
-            const nightlyMinutesForPayment = nightlyMinutesRaw * (60 / 52.5);
+            const workloadHours = timeToDecimal(daily_workload);
+
+            const nonWorkResult = { totalWorkedHours: 0, balanceHours: 0, overtime50Hours: 0, overtime100Hours: 0, nightlyHours: 0, nightlyHoursRaw: 0 };
+            if (status === 'absent') return { ...nonWorkResult, balanceHours: -workloadHours };
+            if (['day_off', 'certificate'].includes(status)) return nonWorkResult;
             
-            const balanceTolerance = parseInt(document.getElementById('balance-tolerance').value) || 0;
-            const rawBalanceMinutes = totalWorkedMinutes - workloadMinutes;
-            const balanceMinutes = Math.abs(rawBalanceMinutes) <= balanceTolerance ? 0 : rawBalanceMinutes;
+            const entry1 = timeToDecimal(dayData.entry1), exit1 = timeToDecimal(dayData.exit1), entry2 = timeToDecimal(dayData.entry2), exit2 = timeToDecimal(dayData.exit2);
+            const isPair1Complete = dayData.entry1 && dayData.exit1;
+            const isPair2Complete = dayData.entry2 && dayData.exit2;
             
+            let period1 = isPair1Complete ? (exit1 >= entry1 ? exit1 - entry1 : (24 - entry1) + exit1) : 0;
+            let period2 = isPair2Complete ? (exit2 >= entry2 ? exit2 - entry2 : (24 - entry2) + exit2) : 0;
+            const totalWorkedHours = period1 + period2;
+            
+            let nightlyHoursRaw = 0;
+            if (isPair1Complete) nightlyHoursRaw += calculateNightlyOverlap(entry1, exit1);
+            if (isPair2Complete) nightlyHoursRaw += calculateNightlyOverlap(entry2, exit2);
+            
+            const nightlyHoursComputed = nightlyHoursRaw * (60 / 52.5);
+            
+            const balanceToleranceHours = (parseInt(document.getElementById('balance-tolerance').value) || 0) / 60;
+            const rawBalanceHours = totalWorkedHours - workloadHours;
+            const balanceHours = Math.abs(rawBalanceHours) <= balanceToleranceHours ? 0 : rawBalanceHours;
+            
+            let finalOvertime50 = 0;
+            let finalOvertime100 = 0;
             if (paymentType === 'hourly') {
-                return { totalWorkedMinutes, balanceMinutes: 0, overtime50Minutes: 0, overtime100Minutes: is_holiday ? totalWorkedMinutes : 0, nightlyMinutes: nightlyMinutesForPayment, nightlyMinutesRaw };
+                finalOvertime100 = is_holiday ? totalWorkedHours : 0;
+            } else {
+                finalOvertime50 = is_holiday ? 0 : Math.max(0, balanceHours);
+                finalOvertime100 = is_holiday ? totalWorkedHours : 0;
             }
 
-            return { totalWorkedMinutes, balanceMinutes, overtime50Minutes: is_holiday ? 0 : Math.max(0, balanceMinutes), overtime100Minutes: is_holiday ? totalWorkedMinutes : 0, nightlyMinutes: nightlyMinutesForPayment, nightlyMinutesRaw };
+            return { 
+                totalWorkedHours: roundUp(totalWorkedHours, 2), 
+                balanceHours: roundUp(balanceHours, 2), 
+                overtime50Hours: roundUp(finalOvertime50, 2), 
+                overtime100Hours: roundUp(finalOvertime100, 2), 
+                nightlyHours: roundUp(nightlyHoursComputed, 2), 
+                nightlyHoursRaw: roundUp(nightlyHoursRaw, 2)
+            };
         };
         
         // --- FUNÇÕES DE RENDERIZAÇÃO E UI ---
@@ -660,7 +695,7 @@
             const currentEmployee = state.employees.find(e => e.id === state.currentEmployeeId);
             if (!currentEmployee) {
                 timesheetBody.innerHTML = `<tr><td colspan="13" class="p-4 text-center text-slate-500">Selecione uma empresa e um funcionário para ver os apontamentos.</td></tr>`;
-                timesheetSummaryEl.innerHTML = ''; // Limpa o resumo
+                timesheetSummaryEl.innerHTML = '';
                 return;
             }
             const timesheetId = `${state.currentEmployeeId}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
@@ -681,68 +716,72 @@
                 const weekendTextClass = isWeekend ? 'text-red-600' : 'text-slate-500';
 
                 const dayData = state.localTimesheet[dayStr] || {};
-                const { totalWorkedMinutes, balanceMinutes, overtime50Minutes, overtime100Minutes, nightlyMinutes } = calculateDayTotals(dayData, currentEmployee);
+                const { totalWorkedHours, balanceHours, overtime50Hours, overtime100Hours, nightlyHoursRaw } = calculateDayTotals(dayData, currentEmployee);
                 const status = dayData.status || 'workday';
                 const isWorkday = !['absent', 'day_off', 'certificate'].includes(status);
                 const workloadDisplay = currentEmployee.paymentType === 'hourly' ? 'N/A' : (dayData.daily_workload || currentEmployee.workload);
-                const balanceDisplay = currentEmployee.paymentType === 'hourly' ? 'N/A' : minutesToTime(balanceMinutes, true);
-                const balanceClass = balanceMinutes < 0 ? 'text-red-500' : 'text-green-600';
-                const extra50 = dayData.manual_extra50 ? dayData.extra50 : minutesToTime(overtime50Minutes);
-                const extra100 = dayData.manual_extra100 ? dayData.extra100 : minutesToTime(overtime100Minutes);
-                const nightly = dayData.manual_nightly ? dayData.nightly : minutesToTime(nightlyMinutes);
+                const balanceDisplay = currentEmployee.paymentType === 'hourly' ? 'N/A' : minutesToTime(decimalToMinutes(balanceHours), true);
+                const balanceClass = balanceHours < 0 ? 'text-red-500' : 'text-green-600';
+                const extra50 = dayData.manual_extra50 ? dayData.extra50 : minutesToTime(decimalToMinutes(overtime50Hours));
+                const extra100 = dayData.manual_extra100 ? dayData.extra100 : minutesToTime(decimalToMinutes(overtime100Hours));
+                
                 return `<tr class="hover:bg-slate-50 ${!isWorkday ? 'bg-slate-200 text-slate-600' : ''}">
                     <td class="p-2 text-center font-medium"><div class="flex items-center justify-center space-x-2 ${weekendDayClass}"><span>${dayStr}</span><span class="text-xs ${weekendTextClass}">${dayOfWeek}</span></div></td>
                     <td><input type="text" placeholder="HH:MM" class="workload-input w-24 p-1.5 border border-transparent hover:border-slate-300 focus:border-blue-500 bg-transparent rounded-md" data-day="${dayStr}" data-field="daily_workload" value="${workloadDisplay}" ${!isWorkday || currentEmployee.paymentType === 'hourly' ? 'disabled' : ''}></td>
                     <td><select class="status-select w-full p-1.5 border border-transparent hover:border-slate-300 bg-transparent rounded-md text-sm" data-day="${dayStr}" data-field="status"><option value="workday" ${status === 'workday' ? 'selected' : ''}>Trabalho</option><option value="absent" ${status === 'absent' ? 'selected' : ''}>Falta</option><option value="day_off" ${status === 'day_off' ? 'selected' : ''}>Folga</option><option value="certificate" ${status === 'certificate' ? 'selected' : ''}>Atestado</option></select></td>
                     ${['entry1', 'exit1', 'entry2', 'exit2'].map(field => `<td><input type="text" placeholder="HH:MM" class="time-input w-24 p-1.5 border border-transparent hover:border-slate-300 focus:border-blue-500 bg-transparent rounded-md" data-day="${dayStr}" data-field="${field}" value="${dayData[field] || ''}" ${!isWorkday ? 'disabled' : ''}></td>`).join('')}
                     <td class="p-2 text-center"><input type="checkbox" class="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500" data-day="${dayStr}" data-field="is_holiday" ${dayData.is_holiday ? 'checked' : ''}></td>
-                    <td class="p-2 text-center text-slate-600 font-semibold">${minutesToTime(totalWorkedMinutes)}</td>
+                    <td class="p-2 text-center text-slate-600 font-semibold">${minutesToTime(decimalToMinutes(totalWorkedHours))}</td>
                     <td class="p-2 text-center font-semibold ${balanceClass}">${balanceDisplay}</td>
                     <td><input type="text" placeholder="HH:MM" class="manual-input w-24 p-1.5 border border-transparent hover:border-slate-300 focus:border-blue-500 bg-transparent rounded-md" data-day="${dayStr}" data-field="extra50" value="${extra50}" ${!isWorkday ? 'disabled' : ''}></td>
                     <td><input type="text" placeholder="HH:MM" class="manual-input w-24 p-1.5 border border-transparent hover:border-slate-300 focus:border-blue-500 bg-transparent rounded-md" data-day="${dayStr}" data-field="extra100" value="${extra100}" ${!isWorkday ? 'disabled' : ''}></td>
-                    <td><input type="text" placeholder="HH:MM" class="manual-input w-24 p-1.5 border border-transparent hover:border-slate-300 focus:border-blue-500 bg-transparent rounded-md" data-day="${dayStr}" data-field="nightly" value="${nightly}" ${!isWorkday ? 'disabled' : ''}></td>
+                    <td class="p-2 text-center text-slate-600 font-semibold">${minutesToTime(decimalToMinutes(nightlyHoursRaw))}</td>
                 </tr>`;
             }).join('');
-            renderTimesheetSummary(); // Renderiza o resumo inicial
+            renderTimesheetSummary();
         };
 
         const calculateMonthTotals = (employee, timesheetData) => {
             const dataToCalculate = timesheetData || state.timesheets[`${employee.id}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`] || {};
-            const totals = { totalWorked: 0, balance: 0, extra50: 0, extra100: 0, nightly: 0, nightlyRaw: 0 };
+            const totals = { totalWorked: 0, balance: 0, extra50: 0, extra100: 0, nightly: 0, nightlyRaw: 0, absences: 0 };
             
             Object.values(dataToCalculate).forEach(dayData => {
+                if (dayData.status === 'absent') {
+                    totals.absences++;
+                }
                 const dayTotals = calculateDayTotals(dayData, employee);
-                totals.totalWorked += dayTotals.totalWorkedMinutes;
+                totals.totalWorked += dayTotals.totalWorkedHours;
                 
-                // Acumula o saldo líquido de dias normais.
                 if (employee.paymentType !== 'hourly') {
-                    // Ignora o H.E. 100% do cálculo do saldo principal, pois ele é sempre pago.
-                    if(!dayTotals.overtime100Minutes > 0) {
-                        totals.balance += dayTotals.balanceMinutes;
-                    }
+                    totals.balance += dayTotals.balanceHours;
                 }
 
-                // H.E. 100% e Ad. Noturno são sempre devidos e acumulados separadamente.
-                totals.extra100 += dayData.manual_extra100 ? timeToMinutes(dayData.extra100) : dayTotals.overtime100Minutes;
-                totals.nightly += dayData.manual_nightly ? timeToMinutes(dayData.nightly) : dayTotals.nightlyMinutes;
-                totals.nightlyRaw += dayTotals.nightlyMinutesRaw;
+                totals.extra100 += dayData.manual_extra100 ? timeToDecimal(dayData.extra100) : dayTotals.overtime100Hours;
+                totals.nightly += dayData.manual_nightly ? timeToDecimal(dayData.nightly) : dayTotals.nightlyHours;
+                totals.nightlyRaw += dayTotals.nightlyHoursRaw;
             });
 
-            // Processamento final: Transforma saldo positivo em H.E. 50%.
             if (employee.paymentType !== 'hourly') {
                 if (totals.balance > 0) {
-                    totals.extra50 = totals.balance; // Todo saldo positivo vira hora extra 50%.
-                    totals.balance = 0; // O saldo (banco) do mês fecha em zero.
+                    totals.extra50 = totals.balance;
+                    totals.balance = 0;
                 } else {
-                    totals.extra50 = 0; // Se saldo for negativo ou zero, não há hora extra 50%.
+                    totals.extra50 = 0;
                 }
             } else {
-                // Horista não tem saldo ou H.E. 50% nesse modelo.
                 totals.balance = 0;
                 totals.extra50 = 0;
             }
             
-            return totals;
+            return {
+                totalWorked: roundUp(totals.totalWorked, 2),
+                balance: roundUp(totals.balance, 2),
+                extra50: roundUp(totals.extra50, 2),
+                extra100: roundUp(totals.extra100, 2),
+                nightly: roundUp(totals.nightly, 2),
+                nightlyRaw: roundUp(totals.nightlyRaw, 2),
+                absences: totals.absences
+            };
         };
 
         const renderTimesheetSummary = () => {
@@ -753,33 +792,37 @@
             }
 
             const monthTotals = calculateMonthTotals(employee, state.localTimesheet);
-            const balanceDisplay = employee.paymentType === 'hourly' ? 'N/A' : minutesToTime(monthTotals.balance, true);
+            const balanceDisplay = employee.paymentType === 'hourly' ? 'N/A' : minutesToTime(decimalToMinutes(monthTotals.balance), true);
             const balanceClass = monthTotals.balance < 0 ? 'text-red-500' : 'text-green-600';
 
+            const summaryItem = (label, valueHours, customClass = 'text-slate-800') => `
+                <div class="p-4 bg-slate-50 rounded-lg">
+                    <p class="text-sm font-medium text-slate-600">${label}</p>
+                    <div class="flex items-baseline gap-2">
+                        <p class="text-2xl font-bold ${customClass}">${minutesToTime(decimalToMinutes(valueHours))}</p>
+                        <span class="text-sm text-slate-500">(${formatDecimal(valueHours)})</span>
+                    </div>
+                </div>`;
+            
             timesheetSummaryEl.innerHTML = `
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h3 class="text-xl font-semibold mb-4 text-slate-800">Resumo do Mês (em tempo real)</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-4">
-                        <div class="p-4 bg-slate-50 rounded-lg">
-                            <p class="text-sm font-medium text-slate-600">Total Trabalhado</p>
-                            <p class="text-2xl font-bold text-slate-800">${minutesToTime(monthTotals.totalWorked)}</p>
-                        </div>
+                    <h3 class="text-xl font-semibold mb-4 text-slate-800">Resumo do Mês</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-6 gap-y-4">
+                        ${summaryItem('Total Trabalhado', monthTotals.totalWorked)}
                         <div class="p-4 bg-slate-50 rounded-lg">
                             <p class="text-sm font-medium text-slate-600">Saldo (Banco)</p>
-                            <p class="text-2xl font-bold ${balanceClass}">${balanceDisplay}</p>
+                            <div class="flex items-baseline gap-2">
+                                <p class="text-2xl font-bold ${balanceClass}">${balanceDisplay}</p>
+                                ${employee.paymentType !== 'hourly' ? `<span class="text-sm text-slate-500">(${formatDecimal(monthTotals.balance)})</span>` : ''}
+                            </div>
                         </div>
-                        <div class="p-4 bg-slate-50 rounded-lg">
-                            <p class="text-sm font-medium text-slate-600">H.E. 50%</p>
-                            <p class="text-2xl font-bold text-slate-800">${minutesToTime(monthTotals.extra50)}</p>
+                         <div class="p-4 bg-slate-50 rounded-lg">
+                            <p class="text-sm font-medium text-slate-600">Faltas (dias)</p>
+                            <p class="text-2xl font-bold text-slate-800">${monthTotals.absences}</p>
                         </div>
-                        <div class="p-4 bg-slate-50 rounded-lg">
-                            <p class="text-sm font-medium text-slate-600">H.E. 100%</p>
-                            <p class="text-2xl font-bold text-slate-800">${minutesToTime(monthTotals.extra100)}</p>
-                        </div>
-                        <div class="p-4 bg-slate-50 rounded-lg">
-                            <p class="text-sm font-medium text-slate-600">Adic. Noturno</p>
-                            <p class="text-2xl font-bold text-slate-800">${minutesToTime(monthTotals.nightly)}</p>
-                        </div>
+                        ${summaryItem('H.E. 50%', monthTotals.extra50)}
+                        ${summaryItem('H.E. 100%', monthTotals.extra100)}
+                        ${summaryItem('Adic. Noturno (Pago)', monthTotals.nightly)}
                     </div>
                 </div>
             `;
@@ -788,30 +831,47 @@
         const renderReport = () => {
             const nightlyPercentage = parseFloat(document.getElementById('nightly-percentage').value) / 100 || 0.2;
             const employeesToReport = state.reportCompanyFilter ? state.employees.filter(emp => emp.companyId === state.reportCompanyFilter) : state.employees;
+            
+            const timeCell = (decimalHours, isBalance = false) => {
+                const balanceClass = decimalHours < 0 ? 'text-red-500' : 'text-green-500';
+                const displayTime = isBalance ? minutesToTime(decimalToMinutes(decimalHours), true) : minutesToTime(decimalToMinutes(decimalHours));
+                const displayDecimal = `(${formatDecimal(decimalHours)})`;
+                return `<div class="${isBalance ? balanceClass : ''}">${displayTime}</div><div class="text-xs text-slate-500 ${isBalance ? balanceClass : ''}">${displayDecimal}</div>`;
+            };
+
             reportBody.innerHTML = employeesToReport.map(emp => {
-                const monthTotals = calculateMonthTotals(emp); // Utiliza a versão com dados salvos
+                const monthTotals = calculateMonthTotals(emp); 
                 const hourlyRate = (emp.paymentType === 'hourly') ? parseFloat(emp.salary || 0) : (parseFloat(emp.salary || 0) / 220);
                 let totalVariablesDisplay = '-', extra50Display, extra100Display, nightlyDisplay;
                 if (emp.paymentType === 'hourly') {
-                    const basePay = ((monthTotals.totalWorked - monthTotals.extra100) / 60) * hourlyRate;
-                    const holidayPay = (monthTotals.extra100 / 60) * hourlyRate * 2;
-                    const nightlyBonusValue = (monthTotals.nightlyRaw / 60) * hourlyRate * nightlyPercentage;
+                    const basePay = (monthTotals.totalWorked - monthTotals.extra100) * hourlyRate;
+                    const holidayPay = monthTotals.extra100 * hourlyRate * 2;
+                    const nightlyBonusValue = monthTotals.nightly * hourlyRate * nightlyPercentage;
                     totalVariablesDisplay = `Total: ${formatCurrency(basePay + holidayPay + nightlyBonusValue)}`;
-                    extra50Display = minutesToTime(0);
+                    extra50Display = timeCell(0);
                     extra100Display = formatCurrency(holidayPay);
                     nightlyDisplay = formatCurrency(nightlyBonusValue);
                 } else {
-                    const extra50Value = (monthTotals.extra50 / 60) * hourlyRate * 1.5;
-                    const extra100Value = (monthTotals.extra100 / 60) * hourlyRate * 2.0;
-                    const nightlyValue = (monthTotals.nightlyRaw / 60) * hourlyRate * nightlyPercentage;
+                    const extra50Value = monthTotals.extra50 * hourlyRate * 1.5;
+                    const extra100Value = monthTotals.extra100 * hourlyRate * 2.0;
+                    const nightlyValue = monthTotals.nightly * hourlyRate * nightlyPercentage;
                     totalVariablesDisplay = formatCurrency(extra50Value + extra100Value + nightlyValue);
-                    extra50Display = hourlyRate > 0 ? formatCurrency(extra50Value) : minutesToTime(monthTotals.extra50);
-                    extra100Display = hourlyRate > 0 ? formatCurrency(extra100Value) : minutesToTime(monthTotals.extra100);
-                    nightlyDisplay = hourlyRate > 0 ? formatCurrency(nightlyValue) : minutesToTime(monthTotals.nightly);
+                    extra50Display = hourlyRate > 0 ? formatCurrency(extra50Value) : timeCell(monthTotals.extra50);
+                    extra100Display = hourlyRate > 0 ? formatCurrency(extra100Value) : timeCell(monthTotals.extra100);
+                    nightlyDisplay = hourlyRate > 0 ? formatCurrency(nightlyValue) : timeCell(monthTotals.nightly);
                 }
-                const balanceDisplay = emp.paymentType === 'hourly' ? 'N/A' : minutesToTime(monthTotals.balance, true);
-                const balanceClass = monthTotals.balance < 0 ? 'text-red-500' : 'text-green-500';
-                return `<tr class="hover:bg-slate-50"><td class="p-4 font-medium">${emp.name}</td><td class="p-4 text-center font-semibold">${minutesToTime(monthTotals.totalWorked)}</td><td class="p-4 text-center font-semibold ${balanceClass}">${balanceDisplay}</td><td class="p-4 text-right">${extra50Display}</td><td class="p-4 text-right">${extra100Display}</td><td class="p-4 text-right">${nightlyDisplay}</td><td class="p-4 text-right font-bold text-blue-700">${totalVariablesDisplay}</td></tr>`;
+                const balanceDisplay = emp.paymentType === 'hourly' ? 'N/A' : timeCell(monthTotals.balance, true);
+                
+                return `<tr class="hover:bg-slate-50">
+                            <td class="p-4 font-medium">${emp.name}</td>
+                            <td class="p-4 text-center font-semibold">${timeCell(monthTotals.totalWorked)}</td>
+                            <td class="p-4 text-center font-semibold">${balanceDisplay}</td>
+                            <td class="p-4 text-center font-semibold">${monthTotals.absences}</td>
+                            <td class="p-4 text-right">${extra50Display}</td>
+                            <td class="p-4 text-right">${extra100Display}</td>
+                            <td class="p-4 text-right">${nightlyDisplay}</td>
+                            <td class="p-4 text-right font-bold text-blue-700">${totalVariablesDisplay}</td>
+                        </tr>`;
             }).join('');
         };
 
@@ -879,8 +939,19 @@
         const getEmployeeCollection = () => collection(db, `/artifacts/${appId}/users/${userId}/employees`);
         const getCompanyCollection = () => collection(db, `/artifacts/${appId}/users/${userId}/companies`);
         const getTimesheetCollection = () => collection(db, `/artifacts/${appId}/users/${userId}/timesheets`);
+        const getSettingsDoc = () => doc(db, `/artifacts/${appId}/users/${userId}/settings/main`);
+
         const saveEmployee = async (id, data) => await setDoc(doc(getEmployeeCollection(), id), data);
         const saveCompany = async (id, data) => await setDoc(doc(getCompanyCollection(), id), data);
+        const saveSettings = async () => {
+            const settings = {
+                nightlyStart: document.getElementById('nightly-start').value,
+                nightlyEnd: document.getElementById('nightly-end').value,
+                nightlyPercentage: document.getElementById('nightly-percentage').value,
+                balanceTolerance: document.getElementById('balance-tolerance').value,
+            };
+            await setDoc(getSettingsDoc(), settings);
+        };
         const deleteEmployeeAndTimesheets = async (id) => {if (!id) return;await deleteDoc(doc(getEmployeeCollection(), id));const batch = writeBatch(db);Object.keys(state.timesheets).filter(key => key.startsWith(id + '_')).forEach(key => batch.delete(doc(getTimesheetCollection(), key)));await batch.commit();closeDeleteModal();};
         const deleteCompany = async (id) => { if (!id) return; await deleteDoc(doc(getCompanyCollection(), id)); closeDeleteModal(); };
         const saveTimesheetData = async (employeeId, month, year, data) => {if (!employeeId) return;const timesheetId = `${employeeId}_${year}-${String(month + 1).padStart(2, '0')}`;await setDoc(doc(getTimesheetCollection(), timesheetId), { data });};
@@ -889,6 +960,7 @@
             if (unsubscribeCompanies) unsubscribeCompanies();
             if (unsubscribeEmployees) unsubscribeEmployees();
             if (unsubscribeTimesheets) unsubscribeTimesheets();
+            if (unsubscribeSettings) unsubscribeSettings();
         };
 
         const setupListeners = () => {
@@ -896,6 +968,15 @@
             unsubscribeCompanies = onSnapshot(getCompanyCollection(), (snapshot) => { state.companies = snapshot.docs.map(doc => doc.data()).sort((a,b) => (a.codigo || "").localeCompare(b.codigo || "")); renderCompanyList(); renderEmployeeList(); renderReport(); });
             unsubscribeEmployees = onSnapshot(getEmployeeCollection(), (snapshot) => { state.employees = snapshot.docs.map(doc => doc.data()).sort((a, b) => a.name.localeCompare(b.name)); renderCompanyList(); renderEmployeeList(); renderReport(); });
             unsubscribeTimesheets = onSnapshot(getTimesheetCollection(), (snapshot) => { state.timesheets = {}; snapshot.docs.forEach(doc => { state.timesheets[doc.id] = doc.data().data; }); renderReport(); if (document.getElementById('apontamentos-tab').classList.contains('active')) { renderTimesheet(); } });
+            unsubscribeSettings = onSnapshot(getSettingsDoc(), (snapshot) => {
+                if(snapshot.exists()) {
+                    const settings = snapshot.data();
+                    document.getElementById('nightly-start').value = settings.nightlyStart || '22:00';
+                    document.getElementById('nightly-end').value = settings.nightlyEnd || '05:00';
+                    document.getElementById('nightly-percentage').value = settings.nightlyPercentage || '20';
+                    document.getElementById('balance-tolerance').value = settings.balanceTolerance || '0';
+                }
+            });
         };
 
         // --- EVENT HANDLERS & MODAL LOGIC ---
@@ -922,13 +1003,13 @@
 
             let initialData = { isEditing: false, id: crypto.randomUUID(), name: '', salary: '', workload: '08:00', companyId: '', paymentType: 'monthly', notes: '' };
 
-            if (employeeModalState) { // Restoring state after creating a company
+            if (employeeModalState) {
                 const restoredState = { ...employeeModalState };
                 employeeModalState = null;
                 initialData = { ...restoredState, companyId: restoredState.newCompanyId, isEditing: restoredState.isEditing || false };
-            } else if (options.isEditing) { // Editing an existing employee
+            } else if (options.isEditing) {
                 initialData = { ...initialData, ...options.employeeData, isEditing: true };
-            } else if (options.prefillCompanyId) { // Adding new employee from company tab
+            } else if (options.prefillCompanyId) {
                 initialData.companyId = options.prefillCompanyId;
             }
             
@@ -957,7 +1038,7 @@
             const companyDropdown = createCompanySearchableDropdown(employeeCompanyContainer, "Pesquisar empresa...", true, (selection) => {
                  if (selection.action === 'create') { 
                     employeeModalState = { ...initialData };
-                    delete employeeModalState.isEditing; // clear editing flag
+                    delete employeeModalState.isEditing;
                     closeEmployeeModal(); 
                     companyToCreateFromModal = selection.value; 
                     openCompanyModal();
@@ -1057,72 +1138,61 @@
             renderReport();
         };
         
-        const handlePdfExport = () => {
-            if (!state.currentEmployeeId) { alert("Por favor, selecione um funcionário para exportar."); return; }
-            const employee = state.employees.find(e => e.id === state.currentEmployeeId);
-            const company = state.companies.find(c => c.id === employee.companyId);
-            const timesheetId = `${state.currentEmployeeId}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
-            const timesheetData = state.timesheets[timesheetId] || {};
-            const monthName = monthSelect.options[monthSelect.selectedIndex].text;
+        const generateExportHtml = (employee, company, timesheetData, monthName, isForPdf = false) => {
+            const timeCellExport = (decimalHours) => isForPdf ? minutesToTime(decimalToMinutes(decimalHours)) : `${minutesToTime(decimalToMinutes(decimalHours))} (${formatDecimal(decimalHours)})`;
+            const balanceCellExport = (decimalHours) => isForPdf ? minutesToTime(decimalToMinutes(decimalHours), true) : `${minutesToTime(decimalToMinutes(decimalHours), true)} (${formatDecimal(decimalHours)})`;
+            const summaryTimeCell = (decimalHours) => `${minutesToTime(decimalToMinutes(decimalHours))} (${formatDecimal(decimalHours)})`;
+            const summaryBalanceCell = (decimalHours) => `${minutesToTime(decimalToMinutes(decimalHours), true)} (${formatDecimal(decimalHours)})`;
 
             const rowsHtml = Array.from({ length: new Date(state.currentYear, state.currentMonth + 1, 0).getDate() }, (_, i) => i + 1).map(day => {
                 const dayStr = String(day).padStart(2, '0');
                 const dayData = timesheetData[dayStr] || {};
                 const date = new Date(state.currentYear, state.currentMonth, day);
                 const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
-                const { totalWorkedMinutes, balanceMinutes, overtime50Minutes, overtime100Minutes, nightlyMinutes } = calculateDayTotals(dayData, employee);
-                
-                const balanceDisplay = employee.paymentType === 'hourly' ? '---' : minutesToTime(balanceMinutes, true);
+                const { totalWorkedHours, balanceHours, overtime50Hours, overtime100Hours, nightlyHoursRaw } = calculateDayTotals(dayData, employee);
+                const balanceDisplay = employee.paymentType === 'hourly' ? '---' : balanceCellExport(balanceHours);
                 const statusDisplay = statusMap[dayData.status || 'workday'] || 'Trabalho';
-
                 return `
                     <tr>
-                        <td>${dayStr}</td>
-                        <td>${dayOfWeek}</td>
-                        <td>${statusDisplay}</td>
+                        <td>${dayStr}</td><td>${dayOfWeek}</td><td>${statusDisplay}</td>
                         <td>${dayData.entry1 || '--:--'}</td><td>${dayData.exit1 || '--:--'}</td>
                         <td>${dayData.entry2 || '--:--'}</td><td>${dayData.exit2 || '--:--'}</td>
-                        <td>${minutesToTime(totalWorkedMinutes)}</td>
-                        <td>${balanceDisplay}</td>
-                        <td>${dayData.manual_extra50 ? dayData.extra50 : minutesToTime(overtime50Minutes)}</td>
-                        <td>${dayData.manual_extra100 ? dayData.extra100 : minutesToTime(overtime100Minutes)}</td>
-                        <td>${dayData.manual_nightly ? dayData.nightly : minutesToTime(nightlyMinutes)}</td>
-                    </tr>
-                `;
+                        <td>${timeCellExport(totalWorkedHours)}</td><td>${balanceDisplay}</td>
+                        <td>${dayData.manual_extra50 ? dayData.extra50 : timeCellExport(overtime50Hours)}</td>
+                        <td>${dayData.manual_extra100 ? dayData.extra100 : timeCellExport(overtime100Hours)}</td>
+                        <td>${timeCellExport(nightlyHoursRaw)}</td>
+                    </tr>`;
             }).join('');
 
             const monthTotals = calculateMonthTotals(employee);
             const hourlyRate = (employee.paymentType === 'hourly') ? parseFloat(employee.salary || 0) : (parseFloat(employee.salary || 0) / 220);
-            const extra50Value = (monthTotals.extra50 / 60) * hourlyRate * 1.5;
-            const extra100Value = (monthTotals.extra100 / 60) * hourlyRate * 2.0;
-            const nightlyValue = (monthTotals.nightlyRaw / 60) * hourlyRate * (parseFloat(document.getElementById('nightly-percentage').value) / 100);
-
+            const extra50Value = monthTotals.extra50 * hourlyRate * 1.5;
+            const extra100Value = monthTotals.extra100 * hourlyRate * 2.0;
+            const nightlyValue = monthTotals.nightly * hourlyRate * (parseFloat(document.getElementById('nightly-percentage').value) / 100);
+            
             const summaryHtml = `
                 <div class="summary-section">
                     <h3>Resumo do Mês</h3>
                     <div class="summary-grid">
-                        <span>Total Horas Trabalhadas:</span><strong>${minutesToTime(monthTotals.totalWorked)}</strong>
-                        ${employee.paymentType !== 'hourly' ? `<span>Saldo Banco de Horas:</span><strong>${minutesToTime(monthTotals.balance, true)}</strong>` : '<span></span><span></span>'}
-                        <span>Total H.E. 50%:</span><strong>${minutesToTime(monthTotals.extra50)} (${formatCurrency(extra50Value)})</strong>
-                        <span>Total H.E. 100%:</span><strong>${minutesToTime(monthTotals.extra100)} (${formatCurrency(extra100Value)})</strong>
-                        <span>Total Ad. Noturno:</span><strong>${minutesToTime(monthTotals.nightly)} (${formatCurrency(nightlyValue)})</strong>
+                        <span>Total Horas Trabalhadas:</span><strong>${summaryTimeCell(monthTotals.totalWorked)}</strong>
+                        ${employee.paymentType !== 'hourly' ? `<span>Saldo Banco de Horas:</span><strong>${summaryBalanceCell(monthTotals.balance)}</strong>` : '<span></span><span></span>'}
+                        <span>Faltas:</span><strong>${monthTotals.absences} dias</strong>
+                        <span>Total H.E. 50%:</span><strong>${summaryTimeCell(monthTotals.extra50)} (${formatCurrency(extra50Value)})</strong>
+                        <span>Total H.E. 100%:</span><strong>${summaryTimeCell(monthTotals.extra100)} (${formatCurrency(extra100Value)})</strong>
+                        <span>Total Ad. Noturno (Pago):</span><strong>${summaryTimeCell(monthTotals.nightly)} (${formatCurrency(nightlyValue)})</strong>
                         <span class="total">Valor Total de Variáveis:</span><strong class="total">${formatCurrency(extra50Value + extra100Value + nightlyValue)}</strong>
                     </div>
-                </div>
-            `;
+                </div>`;
 
-            const printHtml = `
+            return `
                 <!DOCTYPE html>
                 <html lang="pt-BR">
                 <head>
                     <meta charset="UTF-8">
                     <title>Espelho de Ponto - ${employee.name}</title>
                     <style>
-                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-                        @page { size: A4; margin: 1cm; }
-                        body { font-family: 'Inter', sans-serif; font-size: 9pt; color: #333; }
+                        body { font-family: 'Inter', sans-serif, Arial; font-size: 9pt; color: #333; }
                         .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 10px; border-bottom: 2px solid #0056b3; margin-bottom: 15px; }
-                        .header-info { text-align: left; }
                         .header-info h1 { font-size: 14pt; margin: 0; color: #0056b3; }
                         .header-info p { margin: 2px 0; font-size: 10pt; }
                         .header-period { text-align: right; }
@@ -1130,13 +1200,11 @@
                         table { width: 100%; border-collapse: collapse; }
                         th, td { border: 1px solid #ccc; padding: 4px; text-align: center; }
                         th { background-color: #f0f4f8; font-weight: 600; font-size: 8pt;}
-                        tr:nth-child(even) { background-color: #f9f9f9; }
                         .summary-section { margin-top: 20px; page-break-inside: avoid; }
                         .summary-section h3 { font-size: 12pt; color: #0056b3; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
                         .summary-grid { display: grid; grid-template-columns: auto auto; gap: 5px 15px; width: fit-content; }
                         .summary-grid span { text-align: right; }
                         .summary-grid .total { font-weight: bold; margin-top: 5px; padding-top: 5px; border-top: 1px solid #999;}
-                        .print-btn { display: block; margin: 20px auto; padding: 10px 20px; font-size: 16px; cursor: pointer; }
                         @media print { .print-btn { display: none; } }
                     </style>
                 </head>
@@ -1154,23 +1222,16 @@
                     </div>
                     <table>
                         <thead>
-                            <tr>
-                                <th>Dia</th><th>Semana</th><th>Status</th><th>Ent. 1</th><th>Saí. 1</th><th>Ent. 2</th><th>Saí. 2</th><th>Total Trab.</th><th>Saldo</th><th>H.E. 50%</th><th>H.E. 100%</th><th>Ad. Not.</th>
-                            </tr>
+                            <tr><th>Dia</th><th>Semana</th><th>Status</th><th>Ent. 1</th><th>Saí. 1</th><th>Ent. 2</th><th>Saí. 2</th><th>Total Trab.</th><th>Saldo</th><th>H.E. 50%</th><th>H.E. 100%</th><th>Ad. Noturno</th></tr>
                         </thead>
                         <tbody>${rowsHtml}</tbody>
                     </table>
                     ${summaryHtml}
-                    <button class="print-btn" onclick="window.print()">Imprimir</button>
                 </body>
-                </html>
-            `;
-            const win = window.open('', '_blank');
-            win.document.write(printHtml);
-            win.document.close();
+                </html>`;
         };
-        
-        const handleCsvExport = () => {
+
+        const handlePdfExport = () => {
             if (!state.currentEmployeeId) { alert("Por favor, selecione um funcionário para exportar."); return; }
             const employee = state.employees.find(e => e.id === state.currentEmployeeId);
             const company = state.companies.find(c => c.id === employee.companyId);
@@ -1178,62 +1239,37 @@
             const timesheetData = state.timesheets[timesheetId] || {};
             const monthName = monthSelect.options[monthSelect.selectedIndex].text;
 
-            let csvRows = [];
-            csvRows.push(['Espelho de Ponto']);
-            csvRows.push([`Funcionário:`, employee.name]);
-            csvRows.push([`Empresa:`, company ? company.nome : 'N/A']);
-            csvRows.push([`Período:`, `${monthName} de ${state.currentYear}`]);
-            csvRows.push([]); 
-
-            const headers = ["Dia", "Dia da Semana", "Status", "Feriado", "Carga Dia", "Entrada 1", "Saida 1", "Entrada 2", "Saida 2", "Total Trabalhado", "Saldo", "H. Extra 50%", "H. Extra 100%", "Ad. Noturno"];
-            csvRows.push(headers);
-
-            Array.from({ length: new Date(state.currentYear, state.currentMonth + 1, 0).getDate() }, (_, i) => i + 1).forEach(day => {
-                const dayStr = String(day).padStart(2, '0');
-                const dayData = timesheetData[dayStr] || {};
-                const date = new Date(state.currentYear, state.currentMonth, day);
-                const dayOfWeek = date.toLocaleDateString('pt-BR', { weekday: 'long' });
-                const { totalWorkedMinutes, balanceMinutes, overtime50Minutes, overtime100Minutes, nightlyMinutes } = calculateDayTotals(dayData, employee);
-                const balanceDisplay = employee.paymentType === 'hourly' ? '' : minutesToTime(balanceMinutes, true);
-                const statusDisplay = statusMap[dayData.status || 'workday'] || 'Trabalho';
-
-                csvRows.push([
-                    dayStr, dayOfWeek, statusDisplay, dayData.is_holiday ? 'SIM' : 'NAO', dayData.daily_workload || employee.workload,
-                    dayData.entry1 || '', dayData.exit1 || '', dayData.entry2 || '', dayData.exit2 || '',
-                    minutesToTime(totalWorkedMinutes), balanceDisplay,
-                    dayData.manual_extra50 ? dayData.extra50 : minutesToTime(overtime50Minutes),
-                    dayData.manual_extra100 ? dayData.extra100 : minutesToTime(overtime100Minutes),
-                    dayData.manual_nightly ? dayData.nightly : minutesToTime(nightlyMinutes)
-                ]);
-            });
+            const printHtml = generateExportHtml(employee, company, timesheetData, monthName, true);
             
-            csvRows.push([]);
-            csvRows.push(['Resumo do Mês']);
-            const monthTotals = calculateMonthTotals(employee);
-            const hourlyRate = (employee.paymentType === 'hourly') ? parseFloat(employee.salary || 0) : (parseFloat(employee.salary || 0) / 220);
-            const extra50Value = (monthTotals.extra50 / 60) * hourlyRate * 1.5;
-            const extra100Value = (monthTotals.extra100 / 60) * hourlyRate * 2.0;
-            const nightlyValue = (monthTotals.nightlyRaw / 60) * hourlyRate * (parseFloat(document.getElementById('nightly-percentage').value) / 100);
+            const win = window.open('', '_blank');
+            win.document.write(printHtml);
+            win.document.close();
+            win.focus();
+            win.print();
+        };
+        
+        const handleXlsExport = () => {
+            if (!state.currentEmployeeId) { alert("Por favor, selecione um funcionário para exportar."); return; }
+            const employee = state.employees.find(e => e.id === state.currentEmployeeId);
+            const company = state.companies.find(c => c.id === employee.companyId);
+            const timesheetId = `${state.currentEmployeeId}_${state.currentYear}-${String(state.currentMonth + 1).padStart(2, '0')}`;
+            const timesheetData = state.timesheets[timesheetId] || {};
+            const monthName = monthSelect.options[monthSelect.selectedIndex].text;
 
-            csvRows.push([`Total Horas Trabalhadas:`, minutesToTime(monthTotals.totalWorked)]);
-            if(employee.paymentType !== 'hourly') {
-                csvRows.push([`Saldo Banco de Horas:`, minutesToTime(monthTotals.balance, true)]);
-            }
-            csvRows.push([`Total H.E. 50%:`, `${minutesToTime(monthTotals.extra50)} (${formatCurrency(extra50Value)})`]);
-            csvRows.push([`Total H.E. 100%:`, `${minutesToTime(monthTotals.extra100)} (${formatCurrency(extra100Value)})`]);
-            csvRows.push([`Total Ad. Noturno:`, `${minutesToTime(monthTotals.nightly)} (${formatCurrency(nightlyValue)})`]);
-            csvRows.push([`Valor Total de Variáveis:`, formatCurrency(extra50Value + extra100Value + nightlyValue)]);
-
-
-            const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(";")).join("\n");
+            const htmlContent = generateExportHtml(employee, company, timesheetData, monthName, false);
+            
+            const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel' });
+            const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.setAttribute("href", encodeURI(csvContent));
+            link.href = url;
+            
             const monthStr = String(state.currentMonth + 1).padStart(2, '0');
-            const fileName = `Apontamentos_${employee.name.replace(/\s+/g, '_')}_${monthStr}-${state.currentYear}.csv`;
+            const fileName = `Apontamentos_${employee.name.replace(/\s+/g, '_')}_${monthStr}-${state.currentYear}.xls`;
             link.setAttribute("download", fileName);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            URL.revokeObjectURL(url);
         };
 
         const handleSaveTimesheet = async () => { 
@@ -1264,24 +1300,28 @@
                 row.querySelectorAll('.time-input').forEach(i => i.value = ''); 
                 Object.assign(dayData, { entry1: '', exit1: '', entry2: '', exit2: '' }); 
             } 
-            const { totalWorkedMinutes, balanceMinutes, overtime50Minutes, overtime100Minutes, nightlyMinutes } = calculateDayTotals(dayData, currentEmployee); 
+            const { totalWorkedHours, balanceHours, overtime50Hours, overtime100Hours, nightlyHours, nightlyHoursRaw } = calculateDayTotals(dayData, currentEmployee); 
+            
+            dayData.nightly = minutesToTime(decimalToMinutes(nightlyHours));
+
             if (e.target.classList.contains('manual-input')) { 
                 dayData[`manual_${field}`] = true; 
             } else if (['time-input', 'workload-input', 'status-select'].some(c => e.target.classList.contains(c)) || field === 'is_holiday') { 
                 delete dayData.manual_extra50; 
-                delete dayData.manual_extra100; 
-                delete dayData.manual_nightly; 
+                delete dayData.manual_extra100;
             } 
-            dayData.extra50 = dayData.manual_extra50 ? dayData.extra50 : minutesToTime(overtime50Minutes); 
-            dayData.extra100 = dayData.manual_extra100 ? dayData.extra100 : minutesToTime(overtime100Minutes); 
-            dayData.nightly = dayData.manual_nightly ? dayData.nightly : minutesToTime(nightlyMinutes); 
+            dayData.extra50 = dayData.manual_extra50 ? dayData.extra50 : minutesToTime(decimalToMinutes(overtime50Hours));
+            dayData.extra100 = dayData.manual_extra100 ? dayData.extra100 : minutesToTime(decimalToMinutes(overtime100Hours));
+            
+            row.querySelector('td:nth-child(9)').textContent = minutesToTime(decimalToMinutes(totalWorkedHours));
+            const balanceCell = row.querySelector('td:nth-child(10)'); 
+            balanceCell.textContent = currentEmployee.paymentType === 'hourly' ? 'N/A' : minutesToTime(decimalToMinutes(balanceHours), true);
+            balanceCell.className = `p-2 text-center font-semibold ${balanceHours < 0 ? 'text-red-500' : 'text-green-600'}`; 
+            
             row.querySelector('[data-field="extra50"]').value = dayData.extra50; 
             row.querySelector('[data-field="extra100"]').value = dayData.extra100; 
-            row.querySelector('[data-field="nightly"]').value = dayData.nightly; 
-            row.querySelector('td:nth-child(9)').textContent = minutesToTime(totalWorkedMinutes); 
-            const balanceCell = row.querySelector('td:nth-child(10)'); 
-            balanceCell.textContent = currentEmployee.paymentType === 'hourly' ? 'N/A' : minutesToTime(balanceMinutes, true); 
-            balanceCell.className = `p-2 text-center font-semibold ${balanceMinutes < 0 ? 'text-red-500' : 'text-green-600'}`; 
+            row.querySelector('td:nth-child(13)').textContent = minutesToTime(decimalToMinutes(nightlyHoursRaw));
+
             if (!state.hasUnsavedChanges) { 
                 state.hasUnsavedChanges = true; 
                 updateSaveStatus(); 
@@ -1370,6 +1410,21 @@
             addClickOutsideToClose(deleteConfirmModal, closeDeleteModal);
             addClickOutsideToClose(authModal, () => { authModal.classList.add('hidden'); authModal.classList.remove('flex'); });
 
+            employeeModal.querySelector('.payment-type-container').addEventListener('click', (e) => {
+                const button = e.target.closest('.payment-type-btn');
+                if (button) {
+                    const type = button.dataset.type;
+                    document.getElementById('employee-payment-type').value = type;
+                    employeeModal.querySelectorAll('.payment-type-btn').forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.type === type);
+                    });
+                    const isHourly = type === 'hourly';
+                    document.getElementById('workload-wrapper').style.display = isHourly ? 'none' : 'block';
+                    document.getElementById('salary-label').textContent = isHourly ? 'Valor por Hora (R$)' : 'Salário (R$)';
+                    document.getElementById('employee-workload').required = !isHourly;
+                }
+            });
+
             employeeForm.addEventListener('submit', handleEmployeeFormSubmit);
             companyForm.addEventListener('submit', handleCompanyFormSubmit);
             cancelDeleteBtn.addEventListener('click', closeDeleteModal);
@@ -1378,7 +1433,7 @@
             yearSelect.addEventListener('change', handleDateChange);
             searchEmployeeInput.addEventListener('input', e => { state.searchTerm = e.target.value; renderEmployeeList(); });
             exportPdfBtn.addEventListener('click', handlePdfExport);
-            exportCsvBtn.addEventListener('click', handleCsvExport);
+            exportXlsBtn.addEventListener('click', handleXlsExport);
             saveTimesheetBtn.addEventListener('click', handleSaveTimesheet);
             employeeList.addEventListener('click', (e) => { 
                 const row = e.target.closest('tr'); if (!row) return; 
@@ -1435,11 +1490,14 @@
             document.body.addEventListener('input', timeInputHandler);
             document.body.addEventListener('blur', timeBlurHandler, true);
 
-            document.getElementById('balance-tolerance').addEventListener('change', () => {
-                if (document.getElementById('apontamentos-tab').classList.contains('active')) {
-                    renderTimesheet();
-                }
-                renderReport();
+            document.querySelectorAll('.setting-input').forEach(input => {
+                input.addEventListener('change', () => {
+                    saveSettings();
+                    if (document.getElementById('apontamentos-tab').classList.contains('active')) {
+                        renderTimesheet();
+                    }
+                    renderReport();
+                });
             });
 
             document.body.addEventListener('mouseover', e => {
@@ -1450,7 +1508,7 @@
                     const rect = icon.getBoundingClientRect();
                     globalTooltip.style.left = `${rect.left + (rect.width / 2)}px`;
                     globalTooltip.style.top = `${rect.top}px`;
-                    globalTooltip.style.transform = `translateX(-50%) translateY(-100%) translateY(-8px)`; // Position above icon
+                    globalTooltip.style.transform = `translateX(-50%) translateY(-100%) translateY(-8px)`;
                     globalTooltip.style.visibility = 'visible';
                     globalTooltip.style.opacity = '1';
                 }
@@ -1464,7 +1522,7 @@
             });
         };
         
-        // --- SUGESTÃO 4 e Lógica de Autenticação ---
+        // --- Lógica de Autenticação ---
         loginBtn.addEventListener('click', () => { authModal.classList.remove('hidden'); authModal.classList.add('flex'); });
         closeAuthModalBtn.addEventListener('click', () => { authModal.classList.add('hidden'); authModal.classList.remove('flex'); });
         
@@ -1512,12 +1570,10 @@
             const password = document.getElementById('register-password').value; 
             
             try {
-                // Se o usuário atual for anônimo, tentamos "promover" a conta
                 if (auth.currentUser && auth.currentUser.isAnonymous) {
                     const credential = EmailAuthProvider.credential(email, password);
                     await linkWithCredential(auth.currentUser, credential);
                 } else {
-                    // Fallback para o caso de não haver usuário anônimo (raro)
                     await createUserWithEmailAndPassword(auth, email, password); 
                 }
                 authModal.classList.add('hidden'); 
