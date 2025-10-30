@@ -8,7 +8,8 @@ Este projeto é ideal para pequenas empresas, departamentos de RH ou escritório
 
 | Login | Lista de Funcionários | Apontamentos |
 | :---: | :---: | :---: |
-| ![Tela de Login](imagens/telaLogin.png) | ![Lista de Funcionários](imagens/listaFuncionários.png) | ![Tela de Apontamentos](imagens/tabelaApontamentos.png) |
+| <img width="1920" height="1080" alt="login" src="https://github.com/user-attachments/assets/e52966ff-dd50-44d0-86b8-0ab468cf5bf4" /> | <img width="1920" height="1080" alt="funcionarios" src="https://github.com/user-attachments/assets/2da00a9d-0f54-4f9c-9baf-3bd953de5457" /> | <img width="1920" height="1080" alt="apontamento" src="https://github.com/user-attachments/assets/904a9e58-9cea-4158-a0f4-79d2965c12ef" />
+
 
 -----
 
